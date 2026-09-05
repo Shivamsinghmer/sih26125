@@ -48,6 +48,9 @@ importers:
 
   packages/identity:
     dependencies:
+      did-jwt:
+        specifier: ^8.0.18
+        version: 8.0.18
       did-jwt-vc:
         specifier: ^4.0.16
         version: 4.0.16
