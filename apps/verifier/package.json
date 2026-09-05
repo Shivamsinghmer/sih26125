@@ -10,7 +10,6 @@
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --compile --outfile dist/sih-verify",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
     "clean": "rm -rf dist"
   },
   "dependencies": {
