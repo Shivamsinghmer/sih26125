@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+onlyBuiltDependencies:
+  - esbuild
+  - keccak
+  - secp256k1

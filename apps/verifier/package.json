@@ -1,0 +1,22 @@
+{
+  "name": "@sih26125/verifier",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "sih-verify": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --compile --outfile dist/sih-verify",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
