@@ -23,12 +23,16 @@ export function Section({
 export function Card({
   children,
   accent = false,
+  testId,
 }: {
   children: ReactNode;
   accent?: boolean;
+  /** Lets a test target the whole card rather than guessing at a nested div. */
+  testId?: string;
 }) {
   return (
     <div
+      data-testid={testId}
       className={`rounded-3xl px-6 py-6 ${accent ? "bg-blush-peach" : "bg-mist-gray"}`}
     >
       {children}

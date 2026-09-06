@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { IDLE } from "@/lib/action-types";
 import { addPersonAction } from "@/lib/actions";
@@ -17,17 +17,55 @@ const ROLE_OPTIONS = [
 
 export function AddPersonPanel() {
   const [result, formAction, pending] = useActionState(addPersonAction, IDLE);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  function onPhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setPreview(typeof reader.result === "string" ? reader.result : null);
+    reader.readAsDataURL(file);
+  }
 
   return (
     <div className="flex flex-col gap-5">
       <p className="max-w-[70ch] text-body leading-body text-slate-gray">
-        Onboarding writes the name and title to Postgres and a decentralised
-        identity to the chain. Nothing identifying a person reaches the chain —
-        only a DID, a public key and a status flag — which is what makes an
-        erasure request answerable later.
+        Onboarding writes the name, title and photo to Postgres and a
+        decentralised identity to the chain. Nothing identifying a person
+        reaches the chain — only a DID, a public key and a status flag — which
+        is what makes an erasure request answerable later. The photo exists so
+        an ID card can be printed; nothing in the system looks it up at a gate.
       </p>
 
       <form action={formAction} className="flex flex-wrap items-end gap-4">
+        <Field label="Photo">
+          <div className="flex items-center gap-3">
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={preview}
+                alt=""
+                className="h-14 w-14 rounded-xl object-cover"
+                style={{ boxShadow: "var(--shadow-subtle)" }}
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-mist-gray text-caption text-smoke-gray">
+                none
+              </div>
+            )}
+            <input
+              type="file"
+              name="photo"
+              accept="image/*"
+              onChange={onPhotoChange}
+              className="text-caption leading-caption text-slate-gray file:mr-3 file:rounded-full file:border-0 file:bg-ink-black file:px-4 file:py-2 file:text-[13px] file:text-paper-white"
+            />
+          </div>
+        </Field>
+
         <Field label="Name">
           <input
             name="name"

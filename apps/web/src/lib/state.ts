@@ -1,7 +1,7 @@
 import type { Address } from "viem";
 
 import { assetTokenAbi, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
-import { Role, roleName } from "@sih26125/identity";
+import { Role, didFromAddress, roleName } from "@sih26125/identity";
 
 import {
   loadPeople,
@@ -48,7 +48,7 @@ export interface ConsoleState {
 
 const ALL_ROLES = [Role.Admin, Role.Manager, Role.Auditor, Role.User] as const;
 
-async function loadPersona(
+export async function loadPersona(
   persona: Persona,
   deployment: Deployment,
 ): Promise<PersonaState> {
@@ -154,4 +154,99 @@ export async function loadConsoleState(): Promise<ConsoleState | null> {
     // Addresses on file but no chain answering, or a stale deployment file.
     return null;
   }
+}
+
+/* ------------------------------------------------------------- gate check */
+
+export interface GateHolding {
+  label: string;
+  validity: RoleValidity;
+  expiry: number;
+}
+
+export interface GateAsset {
+  tokenId: string;
+  requiredRoleLabel: string;
+  /** Whether this holder currently satisfies what the asset demands. */
+  permitted: boolean;
+}
+
+export interface GateResult {
+  address: Address;
+  did: string;
+  /** Known to the console's own records — a convenience, never the authority. */
+  name: string | null;
+  photo: string | null;
+  registered: boolean;
+  statusLabel: string;
+  holdings: GateHolding[];
+  assets: GateAsset[];
+  checkedAtBlock: string;
+}
+
+const IDENTITY_STATUS = ["Unregistered", "Active", "Suspended", "Retired"];
+
+/**
+ * What a guard's scanner asks the chain.
+ *
+ * Everything here is a read of public on-chain state — a DID is a badge number,
+ * not a secret. The name and photo come from the console's own records purely
+ * so a human can sanity-check the person in front of them; the chain neither
+ * stores nor needs them.
+ */
+export async function lookupIdentity(address: Address): Promise<GateResult | null> {
+  const deployment = readDeployment();
+  if (!deployment) return null;
+
+  const people = await loadPeople();
+  const known = people.find((p) => p.address.toLowerCase() === address.toLowerCase());
+
+  const [identity, blockNumber, assets] = await Promise.all([
+    publicClient.readContract({
+      address: deployment.contracts.IdentityRegistry,
+      abi: identityRegistryAbi,
+      functionName: "get",
+      args: [address],
+    }) as Promise<{ did: string; status: number; registeredAt: bigint }>,
+    publicClient.getBlockNumber(),
+    loadAssets(deployment),
+  ]);
+
+  const holdings = await Promise.all(
+    ALL_ROLES.map(async (role) => {
+      const [, reasonIndex, expiry] = (await publicClient.readContract({
+        address: deployment.contracts.RoleRegistry,
+        abi: roleRegistryAbi,
+        functionName: "checkRole",
+        args: [address, role],
+      })) as [boolean, number, bigint];
+
+      return {
+        label: roleName(role),
+        validity: REASON_BY_INDEX[Number(reasonIndex)] ?? "never-granted",
+        expiry: Number(expiry),
+        role,
+      };
+    }),
+  );
+
+  const held = assets
+    .filter((a) => a.owner.toLowerCase() === address.toLowerCase())
+    .map((a) => ({
+      tokenId: a.tokenId.toString(),
+      requiredRoleLabel: a.requiredRoleLabel,
+      permitted: holdings.some((h) => h.role === a.requiredRole && h.validity === "valid"),
+    }));
+
+  return {
+    address,
+    did: identity.did || didFromAddress(address, deployment.chainId),
+    name: known?.name ?? null,
+    photo: known?.photo ?? null,
+    registered: Number(identity.status) !== 0,
+    statusLabel: IDENTITY_STATUS[Number(identity.status)] ?? "Unknown",
+    holdings: holdings.map(({ label, validity, expiry }) => ({ label, validity, expiry })),
+    assets: held,
+    checkedAtBlock: blockNumber.toString(),
+  };
 }

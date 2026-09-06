@@ -37,6 +37,16 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   title: text("title").notNull(),
   addressIndex: integer("address_index").notNull(),
+  /**
+   * A data URL (`data:image/jpeg;base64,...`), stored as text rather than a
+   * proper blob column. That is a hackathon-scale decision, not a design one —
+   * fine for a few dozen ID photos, wrong for a real deployment, which would
+   * put these in object storage and keep only a reference here. Whatever the
+   * storage, the boundary that matters is unchanged: this column exists so the
+   * photo can be printed on a card, and it is never read by anything that
+   * touches the chain.
+   */
+  photo: text("photo"),
 });
 
 export interface Persona {
@@ -45,6 +55,7 @@ export interface Persona {
   title: string;
   addressIndex: number;
   address: Address;
+  photo: string | null;
 }
 
 let client: ReturnType<typeof postgres> | null = null;
@@ -59,7 +70,7 @@ function connection() {
  * The people the demo opens with. Inserted only when the table is empty, so
  * anyone added through the console is never overwritten.
  */
-const DEFAULT_PEOPLE = [
+export const DEFAULT_PEOPLE = [
   { id: "admin", name: "S. Raghavan", title: "Issuing Authority, IT Security", addressIndex: 0 },
   { id: "manager", name: "Priya Menon", title: "Divisional Manager, Radar Systems", addressIndex: 1 },
   { id: "user", name: "Rahul Nair", title: "Technician, Radar Systems", addressIndex: 2 },
@@ -78,6 +89,9 @@ async function ensureReady() {
       address_index integer not null unique
     )
   `;
+  // Added after the table already existed in some environments; a plain
+  // CREATE TABLE above would not backfill it there.
+  await sql`alter table people add column if not exists photo text`;
   const existing = await sql`select count(*)::int as count from people`;
   if ((existing[0]?.count ?? 0) === 0) {
     for (const person of DEFAULT_PEOPLE) {
@@ -121,16 +135,19 @@ export async function nextAddressIndex(): Promise<number> {
 export async function addPerson(input: {
   name: string;
   title: string;
+  /** A data URL, already validated and size-capped by the caller. */
+  photo?: string | null;
 }): Promise<Persona> {
   await ensureReady();
   const sql = connection();
   const addressIndex = await nextAddressIndex();
 
   const id = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${addressIndex}`;
+  const photo = input.photo ?? null;
 
   await sql`
-    insert into people (id, name, title, address_index)
-    values (${id}, ${input.name}, ${input.title}, ${addressIndex})
+    insert into people (id, name, title, address_index, photo)
+    values (${id}, ${input.name}, ${input.title}, ${addressIndex}, ${photo})
   `;
 
   return {
@@ -139,6 +156,7 @@ export async function addPerson(input: {
     title: input.title,
     addressIndex,
     address: accountFor({ addressIndex }).address,
+    photo,
   };
 }
 

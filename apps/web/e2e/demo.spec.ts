@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/console");
   // Fail with a useful message rather than a confusing selector timeout when
   // the chain is not running.
   const notDeployed = page.getByText("No chain to talk to");
@@ -29,9 +29,12 @@ test("step 1 — seeding registers identities and issues credentials", async ({ 
   await page.getByRole("button", { name: "Seed the demo" }).click();
   await expect(page.getByText(/Demo seeded/i)).toBeVisible();
 
-  // Priya holds Manager, Rahul holds only User — the setup the block depends on.
-  const priya = page.locator("div").filter({ hasText: /^Priya Menon/ }).first();
-  await expect(priya).toContainText("Manager");
+  // Target the whole card by test id. A bare div selector matched whichever
+  // nested div happened to be first, which silently changed meaning the last
+  // time this markup moved — and "Manager" would have matched Priya's job
+  // title rather than her credential badge.
+  const priya = page.getByTestId("person-card").filter({ hasText: "Priya Menon" });
+  await expect(priya.getByText("Manager", { exact: true })).toBeVisible();
 });
 
 test("step 2 — the asset appears under custody", async ({ page }) => {
@@ -70,7 +73,7 @@ test("step 4 — revoking a credential is one action and shows on the holder", a
   await expect(page.getByText(/Credential revoked for Rahul Nair/i).first()).toBeVisible();
 
   await page.reload();
-  const rahul = page.locator("div").filter({ hasText: /^Rahul Nair/ }).first();
+  const rahul = page.getByTestId("person-card").filter({ hasText: "Rahul Nair" });
   await expect(rahul).toContainText("revoked");
 });
 

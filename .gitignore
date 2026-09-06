@@ -20,6 +20,9 @@ deployments/
 *.tsbuildinfo
 next-env.d.ts
 
-# Playwright output
-test-results/
-playwright-report/
+# Playwright's saved sign-in state holds a live session token - never commit it.
+# Patterns with a slash anchor to this file's directory, so these need the
+# leading ** to match apps/web/playwright/.auth/.
+**/playwright/.auth/
+**/test-results/
+**/playwright-report/

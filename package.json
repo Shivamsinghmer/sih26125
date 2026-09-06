@@ -12,7 +12,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
-    "demo:reset": "pnpm --filter @sih26125/contracts deploy:local && pnpm --filter @sih26125/chain seed",
+    "demo:reset": "pnpm --filter @sih26125/contracts deploy:local && pnpm --filter @sih26125/chain seed && pnpm --filter @sih26125/web reset:people",
     "e2e": "pnpm demo:reset && pnpm --filter @sih26125/web e2e"
   },
   "devDependencies": {

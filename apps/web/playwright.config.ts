@@ -33,7 +33,25 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Signs in once; every demo test reuses the session rather than repeating a
+    // login it is not testing.
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    {
+      name: "access",
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "demo",
+      testMatch: /demo\.spec\.ts/,
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/admin.json",
+      },
+    },
+  ],
   webServer: {
     command: "pnpm dev",
     url: process.env.BASE_URL ?? "http://127.0.0.1:3000",

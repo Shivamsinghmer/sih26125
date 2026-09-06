@@ -278,6 +278,26 @@ export async function seedDemoAction(
  * The signing key is derived from an HD index, so onboarding never writes a
  * private key anywhere.
  */
+/** Kept well under Postgres's text-column comfort zone for a base64 payload. */
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+
+async function readPhoto(formData: FormData): Promise<
+  { ok: true; dataUrl: string | null } | { ok: false; message: string }
+> {
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) return { ok: true, dataUrl: null };
+
+  if (!file.type.startsWith("image/")) {
+    return { ok: false, message: "The photo must be an image file." };
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    return { ok: false, message: "Photo is too large — please use one under 2MB." };
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+  return { ok: true, dataUrl: `data:${file.type};base64,${bytes.toString("base64")}` };
+}
+
 export async function addPersonAction(
   _prev: ActionResult,
   formData: FormData,
@@ -292,12 +312,17 @@ export async function addPersonAction(
     return { status: "error", message: "Enter the person's name." };
   }
 
+  const photo = await readPhoto(formData);
+  if (!photo.ok) {
+    return { status: "error", message: photo.message };
+  }
+
   const people = await loadPeople();
   const admin = personaById(people, "admin");
 
   let created;
   try {
-    created = await addPerson({ name, title: title || "Unassigned" });
+    created = await addPerson({ name, title: title || "Unassigned", photo: photo.dataUrl });
   } catch (error) {
     return {
       status: "error",
