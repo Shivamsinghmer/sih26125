@@ -259,6 +259,34 @@ What is actually wanted is guardian recovery: a smart-contract wallet with an ow
 
 TanStack Start is arguably the better architectural fit — this is a client-heavy dashboard that barely uses RSC, so Next's server/client boundary tax buys little. But the team's frontend builder already knows Next.js, **and** Next.js has the deeper trench of prior art for wagmi + shadcn/ui specifically. Familiarity and ecosystem depth point the same way.
 
+### Console auth — key possession for people, provisioned credentials for terminals
+
+This one was **decided, reversed, and reversed back**, so the reasoning is recorded in full rather than only the outcome.
+
+**First answer: SIWE.** The argument was that a password store is exactly the kind of centralised, admin-editable table the system exists to replace, so console access should be gated by the same cryptographic fact that gates the contracts.
+
+**Then it was quietly built as username + password**, which contradicted that without anyone saying so. The reason it drifted is a real constraint and worth keeping:
+
+> **You cannot prove possession of a key to a server that already holds it.**
+
+Every private key was derived server-side from the HD seed (`people.ts`). A "sign this nonce" flow would have been the server signing on the user's behalf and then verifying its own work — theatre, not authentication. SIWE was genuinely incompatible with the custody model.
+
+**The resolution was to change the custody model, not the claim.** Three options were weighed:
+
+| Option | Verdict |
+|---|---|
+| Password + server-held keys | Honest but the login is a database row; the pitch's own argument would not apply to its front door |
+| **Browser keystore + SIWE** | **Chosen.** Key encrypted in the browser under a passphrase, signs a server nonce |
+| MetaMask / wallet SIWE | Reverses the recorded no-wallet decision and puts an extension popup between the judge and the demo |
+
+**How it works now.** The key lives in the browser, encrypted with PBKDF2-SHA256 → AES-GCM via WebCrypto (no dependency), under a passphrase the server never sees. Sign-in is a signature over a server-issued, single-use nonce. **The console role is then read from `RoleRegistry`, never stored** — so revoking someone's Admin credential on chain closes their console too, with no second place to remember. A genuine signature from a key holding no credential is refused, which is the case that proves authority comes from the chain rather than from possession of any key.
+
+**A side effect worth knowing:** this is what stops `GuardianRecovery` being hollow. It previously "recovered" a key the server already held. Now losing the key is a real event and the m-of-n quorum is a real answer to it.
+
+**Guards are deliberately different.** A gate post is a fixed device staffed by whoever is on shift; issuing every guard a personal key to unlock a shared screen is ceremony without security. The **terminal** is provisioned with its own credential, the way a card reader is today. So `console_users` holds devices, not people — which is not the thing this project criticises. An editable table of *permissions* would be; a table of device credentials is not, and the gate view is read-only regardless.
+
+⚠️ **Two things a real deployment must change.** `AUTH_SECRET` is mandatory in production (the code refuses to fall back to the dev key there), and the demo terminal credential and the issuing authority's key are printed on the login page on purpose — both must go before this is anything but a demo.
+
 ---
 
 ## 7. Two demo-critical implementation details
@@ -340,6 +368,7 @@ once the code looks finished.
 | Demo fails on venue network | The entire system runs locally. This PS has no external dependency at all, which is precisely why it was chosen. |
 | AI-generated contract contains an admin-grants-itself-everything flaw | Every contract is read line by line by a human before the final, with the access-control graph drawn on paper. **If we cannot explain our own permission structure on a whiteboard, we lose the round regardless of the demo.** |
 | *"Who physically issues the ID card / uploads the photo?"* | Deliberately out of scope, for the same reason a photo never touches the chain: it is personal data, more re-identifying than a name, and the system's job is to authenticate a credential, not manufacture one. `IdentityRegistry.Identity` holds only `did`, `status` and `registeredAt` — no name, no photo. Printing and photo capture stay an administrative process (HR / IT Security), exactly as today; a photo would live as a file in Postgres keyed to the `people` row, never referenced on chain even by hash. |
+| *"How do people log into the console — is that another central directory?"* | No. People sign in by **proving they hold a key**, which lives encrypted in their browser under a passphrase the server never sees; sign-in is a signature over a single-use nonce. Their role is then **read from `RoleRegistry`**, never stored, so revoking an Admin credential on chain closes the console too. A valid signature from a key with no credential is refused — authority comes from the chain, not from holding a key. Gate terminals are the exception and are provisioned as *devices*, the way a card reader is; that table holds no people. See §6. |
 | *"How does a guard know the card belongs to the person holding it?"* | Two checks, deliberately not one. **(1) Face matches card** is solved the way a passport already solves it — the photo is printed on the card, the guard compares it to the person in front of them, no lookup involved. **(2) The credential is currently valid** is the chain question: the card's QR encodes only the `did:ethr:<chainId>:<address>` — no name, safe to expose — and a scanner resolves it against `RoleRegistry.checkRole` and, for asset custody specifically, `AssetToken.ownerOf(tokenId)`. The blockchain was never meant to prove a face; it proves an authorization, the same separation Aadhaar makes between a biometric match and an authorization database. Not yet built as a console screen — the logic is a straight read of contracts already deployed, so it is a fast add if a live demo of it is ever needed. |
 
 ---
@@ -356,14 +385,34 @@ pnpm test                       # turbo: run all tests — 97 across five packag
 pnpm typecheck                  # turbo: typecheck everything — 11 tasks
 ```
 
-```bash
-# Local chain — the daily loop
-pnpm --filter @sih26125/contracts node          # Hardhat Network on :8545
-pnpm --filter @sih26125/contracts deploy:local  # deploy all five contracts
-pnpm --filter @sih26125/chain demo              # the five-step script, scripted end to end
-pnpm --filter @sih26125/chain seed              # just the opening state, for the console
+**Running the whole thing, from a clean machine.** Four terminals; the first
+three stay open.
 
-pnpm e2e                         # from repo root: redeploy + reseed + run the 6-test Playwright suite
+```bash
+# 1. Database — the console will not load without it
+docker compose -f infra/postgres/docker-compose.yml up -d
+
+# 2. Chain — leave this running
+pnpm --filter @sih26125/contracts node          # Hardhat Network on :8545
+
+# 3. Contracts + demo state (one-off, re-runnable any time)
+pnpm demo:reset                                 # deploy all five, seed the chain, reset people
+
+# 4. The console
+pnpm --filter @sih26125/web dev                 # http://localhost:3000
+```
+
+Then open <http://localhost:3000> and sign in:
+
+- **Issuing authority** — paste the demo key shown on the login page under
+  "Demo key for the issuing authority", pick any passphrase of 8+ characters.
+- **Gate terminal** — `gate-3` / `gate-post-3`.
+
+```bash
+# Other useful things
+pnpm --filter @sih26125/chain demo              # the five-step script, no browser needed
+pnpm --filter @sih26125/chain seed              # just the opening state
+pnpm e2e                                        # resets, then runs all 15 Playwright tests
 ```
 
 ```bash
