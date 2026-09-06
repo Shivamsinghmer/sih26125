@@ -188,3 +188,73 @@ export async function loadAuditTrail(): Promise<AuditEntry[] | null> {
     return null;
   }
 }
+
+/* ----------------------------------------------------------- filtering */
+
+export interface AuditQuery {
+  /** Contract name, or "all". */
+  contract?: string;
+  /** Event name, or "all". */
+  event?: string;
+  /** Free text, matched against the rendered description. */
+  q?: string;
+  page?: number;
+}
+
+export interface AuditPage {
+  entries: AuditEntry[];
+  total: number;
+  matched: number;
+  page: number;
+  pageCount: number;
+  /** Every event name present in the unfiltered trail, for the filter menu. */
+  eventNames: string[];
+  contracts: string[];
+}
+
+export const AUDIT_PAGE_SIZE = 25;
+
+/**
+ * Filter and paginate the trail.
+ *
+ * Done in memory over the full replay, which is honest for a chain of this
+ * size and would not survive a real deployment: at scale this query belongs in
+ * the indexer's Postgres tables, which exist precisely so that reading history
+ * does not mean replaying it. The console reads the chain directly because the
+ * claim it makes — that no database is consulted — is worth more here than the
+ * milliseconds.
+ */
+export function queryAuditTrail(all: AuditEntry[], query: AuditQuery): AuditPage {
+  const eventNames = [...new Set(all.map((e) => e.eventName))].sort();
+  const contracts = [...new Set(all.map((e) => e.contract))].sort();
+
+  const needle = query.q?.trim().toLowerCase() ?? "";
+  const matchedEntries = all.filter((entry) => {
+    if (query.contract && query.contract !== "all" && entry.contract !== query.contract) {
+      return false;
+    }
+    if (query.event && query.event !== "all" && entry.eventName !== query.event) {
+      return false;
+    }
+    if (needle && !entry.description.toLowerCase().includes(needle)) return false;
+    return true;
+  });
+
+  // Newest first: an auditor opening this wants what just happened, not the
+  // genesis of the chain.
+  const ordered = [...matchedEntries].reverse();
+
+  const pageCount = Math.max(1, Math.ceil(ordered.length / AUDIT_PAGE_SIZE));
+  const page = Math.min(Math.max(1, query.page ?? 1), pageCount);
+  const start = (page - 1) * AUDIT_PAGE_SIZE;
+
+  return {
+    entries: ordered.slice(start, start + AUDIT_PAGE_SIZE),
+    total: all.length,
+    matched: ordered.length,
+    page,
+    pageCount,
+    eventNames,
+    contracts,
+  };
+}

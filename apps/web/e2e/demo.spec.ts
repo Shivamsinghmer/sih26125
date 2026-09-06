@@ -25,9 +25,10 @@ test("the dashboard opens on what the chain currently holds", async ({ page }) =
 test("step 1 — seeding registers identities and issues credentials", async ({ page }) => {
   await page.goto("/console/people");
   await page.getByRole("button", { name: "Seed the demo" }).click();
-  // Seeding is nine sequential on-chain transactions — four registrations,
-  // four credentials and a mint — each awaiting its receipt. Measured at ~20s
-  // in dev, so the default 15s expect timeout was shorter than the work.
+  // Slow, but not for the reason it looks. Measured server-side, the action
+  // body is ~0.5s (nine transactions) and revalidation is ~0ms; the rest is
+  // Next's dev-mode re-render of the route in the action response. A production
+  // build does not pay it, so this timeout covers dev, not a real cost.
   await expect(page.getByText(/Demo seeded/i)).toBeVisible({ timeout: 60_000 });
 
   // Target the whole card by test id. A bare div selector matched whichever
@@ -100,4 +101,38 @@ test("step 5 — the auditor replay reconstructs the history from events", async
 
   // The claim this view exists to make.
   await expect(page.getByText(/no application database is consulted/i)).toBeVisible();
+});
+
+test("the audit trail can be filtered, searched and paged", async ({ page }) => {
+  await page.goto("/audit");
+
+  const rows = page.locator("ol > li");
+  const unfiltered = await rows.count();
+  expect(unfiltered).toBeGreaterThan(0);
+
+  // Narrowing by contract must reduce the set, not merely relabel it — and it
+  // applies on change, with no submit to press.
+  await page.getByLabel("Contract").selectOption("RoleRegistry");
+  await expect(page).toHaveURL(/contract=RoleRegistry/);
+  await expect(page.getByText(/of \d+ events match/)).toBeVisible();
+  await expect(page.locator("ol > li").first()).toContainText(/credential/i);
+
+  // Typing filters without a submit, after its debounce.
+  await page.goto("/audit");
+  await page.getByLabel("Search the record").fill("zzz-no-such-thing");
+  await expect(page).toHaveURL(/q=zzz-no-such-thing/, { timeout: 10_000 });
+  await expect(page.getByText("No events match those filters")).toBeVisible();
+
+  // Clearing restores the full record.
+  await page.getByRole("button", { name: "Clear" }).click();
+  await expect(page).toHaveURL(/\/audit$/);
+
+  // Paging keeps the active filter rather than silently resetting it.
+  await page.goto("/audit?contract=RoleRegistry");
+  const older = page.getByRole("link", { name: /Older/ });
+  if (await older.count()) {
+    await older.click();
+    await expect(page).toHaveURL(/contract=RoleRegistry/);
+    await expect(page).toHaveURL(/page=2/);
+  }
 });

@@ -26,7 +26,7 @@ export function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-8 border-b border-mist-gray px-6 py-8 md:h-screen md:w-[264px] md:overflow-y-auto md:border-b-0 md:border-r md:px-7">
+    <aside className="flex w-full shrink-0 flex-col gap-8 border-b border-mist-gray bg-paper-white px-6 py-8 md:sticky md:top-0 md:h-screen md:w-[264px] md:overflow-y-auto md:border-b-0 md:border-r md:px-7">
       <div>
         <Link href="/" className="block">
           <p className="text-caption leading-caption text-ink-black">BEL Asset Custody</p>

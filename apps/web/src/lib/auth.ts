@@ -3,16 +3,7 @@ import { promisify } from "node:util";
 
 import postgres from "postgres";
 
-import {
-  ROLE_ACCESS,
-  ROLE_HOME,
-  ROLE_LABEL,
-  canAccess,
-  type ConsoleRole,
-} from "./auth-types";
-
-export { ROLE_ACCESS, ROLE_HOME, ROLE_LABEL, canAccess };
-export type { ConsoleRole };
+import type { ConsoleRole } from "./auth-types";
 
 /**
  * Terminal accounts — devices, not people.

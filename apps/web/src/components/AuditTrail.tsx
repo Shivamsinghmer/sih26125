@@ -11,11 +11,21 @@ function formatTime(timestamp: number): string {
   }).format(new Date(timestamp * 1000));
 }
 
-export function AuditTrail({ entries }: { entries: AuditEntry[] }) {
+export function AuditTrail({
+  entries,
+  filtered = false,
+}: {
+  entries: AuditEntry[];
+  /** Changes the empty state: "nothing happened" and "nothing matched" are
+   * different facts, and telling an auditor the wrong one is misleading. */
+  filtered?: boolean;
+}) {
   if (entries.length === 0) {
     return (
       <p className="text-body leading-body text-slate-gray">
-        Nothing has happened on this chain yet.
+        {filtered
+          ? "No events match those filters."
+          : "Nothing has happened on this chain yet."}
       </p>
     );
   }
@@ -59,7 +69,7 @@ export function AuditTrail({ entries }: { entries: AuditEntry[] }) {
       </ol>
 
       <p className="text-caption leading-caption text-smoke-gray">
-        {entries.length} events. Every one carries the transaction that produced it.
+        Showing {entries.length}. Every one carries the transaction that produced it.
       </p>
     </div>
   );

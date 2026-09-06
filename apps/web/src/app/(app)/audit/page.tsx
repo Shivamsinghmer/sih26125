@@ -1,6 +1,8 @@
-import { PageHeading } from "@/components/PageHeading";
+import { AuditFilters } from "@/components/AuditFilters";
+import { AuditPagination } from "@/components/AuditPagination";
 import { AuditTrail } from "@/components/AuditTrail";
-import { loadAuditTrail } from "@/lib/audit";
+import { PageHeading } from "@/components/PageHeading";
+import { loadAuditTrail, queryAuditTrail } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,24 @@ export const dynamic = "force-dynamic";
  * controls that change anything. An auditor who can also issue credentials is
  * not an auditor.
  */
-export default async function AuditPage() {
+export default async function AuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string) => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+
+  const current = {
+    contract: one("contract") ?? "all",
+    event: one("event") ?? "all",
+    q: one("q") ?? "",
+  };
+  const page = Number.parseInt(one("page") ?? "1", 10);
+
   const entries = await loadAuditTrail();
 
   return (
@@ -20,17 +39,28 @@ export default async function AuditPage() {
         it reports on.
       </PageHeading>
 
-      <div>
-        {entries === null ? (
-          <div className="rounded-3xl bg-mist-gray px-8 py-7">
-            <p className="text-body leading-body">
-              No chain to read. Deploy the contracts and reload.
-            </p>
-          </div>
-        ) : (
-          <AuditTrail entries={entries} />
-        )}
-      </div>
+      {entries === null ? (
+        <div className="rounded-3xl bg-mist-gray px-8 py-7">
+          <p className="text-body leading-body">
+            No chain to read. Deploy the contracts and reload.
+          </p>
+        </div>
+      ) : (
+        (() => {
+          const result = queryAuditTrail(entries, {
+            ...current,
+            page: Number.isNaN(page) ? 1 : page,
+          });
+
+          return (
+            <div className="flex flex-col gap-8">
+              <AuditFilters result={result} current={current} />
+              <AuditTrail entries={result.entries} filtered={result.matched !== result.total} />
+              <AuditPagination result={result} params={current} />
+            </div>
+          );
+        })()
+      )}
     </>
   );
 }

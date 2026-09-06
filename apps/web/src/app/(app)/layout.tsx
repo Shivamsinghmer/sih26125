@@ -26,7 +26,7 @@ export default async function AppLayout({
   const deployment = readDeployment();
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="flex min-h-screen flex-col items-start md:flex-row">
       <Sidebar
         groups={navFor(session.role)}
         who={session.displayName}
@@ -39,7 +39,7 @@ export default async function AppLayout({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-end border-b border-mist-gray px-6 py-4 md:px-10">
+        <header className="sticky top-0 z-10 flex items-center justify-end border-b border-mist-gray bg-paper-white px-6 py-4 md:px-10">
           <SignOutButton />
         </header>
         <main className="min-w-0 flex-1 px-6 pb-24 pt-10 md:px-10">{children}</main>
