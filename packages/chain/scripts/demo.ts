@@ -202,7 +202,15 @@ async function main() {
   // ----------------------------------------------------------------- 5. audit
   step(5, "Auditor replays the full history from chain events alone");
 
-  const logs = await publicClient.getLogs({ fromBlock: 0n, toBlock: "latest" });
+  // Scoped to this run's own three contracts. An unscoped getLogs would also
+  // pick up any other contract ever deployed on this chain since block zero —
+  // harmless on a chain used only for this script, misleading on a shared dev
+  // node that has seen other deployments in the same session.
+  const logs = await publicClient.getLogs({
+    address: [identityRegistry, roleRegistry, assetToken],
+    fromBlock: 0n,
+    toBlock: "latest",
+  });
   const byAddress = new Map<string, number>();
   for (const log of logs) {
     const key = log.address.toLowerCase();

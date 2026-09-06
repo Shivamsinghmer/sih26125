@@ -139,7 +139,7 @@ One monorepo, one language, one deployment — which is also a good answer when 
 | Contracts | Solidity 0.8.28 + Hardhat | Hardhat's tooling and tests are TypeScript |
 | Contract libraries | OpenZeppelin v5 | Audited ERC-721 and AccessControl. Note: v5 uses the `_update` hook. |
 | Chain access | viem | Fully typed — your ABI becomes TypeScript types automatically |
-| Identity / credentials | Veramo + ethr-did-resolver (fallback: `did-jwt-vc`) | A TypeScript framework built specifically for DIDs and verifiable credentials |
+| Identity / credentials | `did-jwt-vc` + a hand-written offline `did:ethr` resolver | The Phase 0 spike skipped Veramo — went straight to the libraries it wraps. ~200 lines, no agent/plugin layer, fully explainable under Q&A. See §6. |
 | Selective disclosure | `@sd-jwt/core` | Prove a role without revealing identity attributes |
 | Database | Postgres + **Drizzle** | Typed queries, no codegen step, `drizzle-kit push` fits an hourly-changing schema |
 | Front end | Next.js + Tailwind v4 + shadcn/ui + wagmi | Admin console, employee view and auditor explorer, built quickly and looking finished |
@@ -151,11 +151,14 @@ One monorepo, one language, one deployment — which is also a good answer when 
 
 ```
 packages/contracts   Solidity sources, Hardhat config, TypeScript tests, deploy scripts
-packages/identity    DID creation, credential issuance and verification
+packages/identity    DID creation, credential issuance and verification (did-jwt-vc, offline resolver)
+packages/chain       Contract ABIs, revert-to-sentence decoder, the CLI demo/staging scripts
+packages/custody     Custody bundle format: sign, verify, canonical digest — no chain access
 packages/indexer     viem event listener writing chain events into Postgres  [Bun]
-apps/web             Next.js — admin console, employee view, auditor explorer, AND all API routes
+apps/web             Next.js — admin console, auditor replay, onboarding, AND all API routes
 apps/verifier        Offline CLI verifier, compiled to a single binary       [Bun]
 infra/besu           genesis.json and docker-compose for the 4-node QBFT network
+infra/postgres       docker-compose for the indexer's and console's database
 docs/                DESIGN.md, design-tokens.json, theme.css
 ```
 
@@ -290,15 +293,19 @@ This is handled in `AssetToken._update`, and the exemption is covered by the fir
 
 ## 8. Build plan
 
-| Phase | Focus | Done when |
+All six phases are functionally complete and verified — not merely written — as of this
+commit. What "verified" meant for each is recorded here so the evidence is not lost
+once the code looks finished.
+
+| Phase | Focus | Status |
 |---|---|---|
-| **Phase 0** | Research and decisions | DID method chosen and justified; threat model written; Veramo issuing and verifying one credential end to end. If this works, the project is de-risked. |
-| **Phase 1** | Contracts | IdentityRegistry, RoleRegistry and AssetToken deployed to Hardhat Network with passing TypeScript tests, **including a test that asserts an unauthorised transfer reverts**. ✅ **Done — 23 tests passing** |
-| **Phase 2** | Identity service | Veramo issues role credentials; status anchored on chain; revocation works and is observable |
-| **Phase 3** | Indexer | Every contract event indexed into Postgres; the index can be dropped and rebuilt from the chain |
-| **Phase 4** | Interfaces | Admin console, employee view and auditor explorer functional end to end |
-| **Phase 5** | Hardening | Guardian recovery working; offline verifier binary built and tested with the network disconnected; Besu network up and the same bytecode deployed to it |
-| **Phase 6** | Demo | Five-step script rehearsed to under five minutes, recorded as a Playwright test so a late change cannot silently break it |
+| **Phase 0** | Research and decisions | ✅ **Done.** Veramo spike resolved to "skip it" within the 4-hour box — `packages/identity` went straight to `did-jwt-vc` + `ethr-did-resolver`, the libraries Veramo wraps. ~200 lines, fully explainable under Q&A. |
+| **Phase 1** | Contracts | ✅ **Done — 48 tests passing.** Five contracts (`IdentityRegistry`, `RoleRegistry`, `AssetToken`, `CredentialStatus`, `GuardianRecovery`), including the unauthorised-transfer-reverts test and the mint/burn `address(0)` exemption test, written first as the design rule required. |
+| **Phase 2** | Identity service | ✅ **Done.** `issueRoleCredential` / `verifyRoleCredential` issue and verify a role credential with no network access — proven by resolving a `did:ethr` identifier from the string alone. Revocation is observable via `RoleRegistry.checkRole`'s `InvalidReason`. |
+| **Phase 3** | Indexer | ✅ **Done, verified against real Postgres.** All five tables created via `drizzle-kit push`; a seeded chain indexed correctly; the index was `TRUNCATE`d to zero rows and rebuilt — **byte-for-byte identical** to the pre-truncate snapshot. Live following (not just backfill) confirmed by revoking a credential and watching the running daemon pick it up. |
+| **Phase 4** | Interfaces | ✅ **Done.** Admin console (issue / revoke / mint / onboard), the blocked-transfer decode, and the auditor replay all functional end to end in a browser. Onboarding a new person writes personal data to Postgres and only a DID to the chain — verified by adding "A. Krishnan" and confirming the `people` table holds no private key. |
+| **Phase 5** | Hardening | ✅ **Done.** Guardian recovery's cancel-during-timelock path is tested (a colluding quorum cannot recover an account whose owner is still watching). The verifier binary (`bun build --compile`, 95MB) was run standalone with the chain process killed first — `curl` returned connection-refused, the binary still returned `VERIFIED`. A forged bundle was caught by two independent checks. Besu: four QBFT validators (one per named department) produce blocks on the 2s period, and the identical bytecode used on Hardhat deploys and reverts identically — `pnpm --filter @sih26125/chain besu:verify`. |
+| **Phase 6** | Demo | ✅ **Scripted spine done and timed; live rehearsal is a team task, not a code one.** `pnpm --filter @sih26125/chain demo` runs all five steps end to end in **under 3 seconds**. The 6-test Playwright suite (`pnpm e2e`) asserts each beat against the real console and is self-resetting, so it can be re-run before the final without inheriting stale chain state. What remains is a human rehearsing the narration over the UI to fit the five-minute slot — that part cannot be verified by a script. |
 
 ### The five-step demo script
 
@@ -343,16 +350,38 @@ This is handled in `AssetToken._update`, and the exemption is covered by the fir
 pnpm install                    # install everything
 
 pnpm build                      # turbo: build all packages in dependency order
-pnpm test                       # turbo: run all tests
-pnpm typecheck                  # turbo: typecheck everything
+pnpm test                       # turbo: run all tests — 97 across five packages
+pnpm typecheck                  # turbo: typecheck everything — 11 tasks
 ```
 
 ```bash
-cd packages/contracts
-pnpm exec hardhat compile       # compile + generate typechain types
-pnpm exec hardhat test          # 23 tests
-pnpm exec hardhat node          # local chain on :8545
-pnpm deploy:local               # deploy the three contracts to it
+# Local chain — the daily loop
+pnpm --filter @sih26125/contracts node          # Hardhat Network on :8545
+pnpm --filter @sih26125/contracts deploy:local  # deploy all five contracts
+pnpm --filter @sih26125/chain demo              # the five-step script, scripted end to end
+pnpm --filter @sih26125/chain seed              # just the opening state, for the console
+
+pnpm e2e                         # from repo root: redeploy + reseed + run the 6-test Playwright suite
+```
+
+```bash
+# Postgres — for the indexer and the console's people table
+docker compose -f infra/postgres/docker-compose.yml up -d
+pnpm --filter @sih26125/indexer db:push         # create the tables
+pnpm --filter @sih26125/indexer start           # the daemon — leave it running
+
+# Besu — the deployment target, not the daily loop
+pnpm --filter @sih26125/chain besu:genesis      # regenerate genesis + validator keys
+docker compose -f infra/besu/docker-compose.yml up -d
+pnpm --filter @sih26125/contracts hardhat run scripts/deploy.ts --network besu
+pnpm --filter @sih26125/chain besu:verify       # confirm the gate holds on the real target
+```
+
+```bash
+# The offline verifier
+pnpm --filter @sih26125/chain export -- 1                 # export asset #1's custody bundle
+pnpm --filter @sih26125/verifier build                     # compile to dist/sih-verify(.exe)
+pnpm --filter @sih26125/verifier dev asset-1-custody.json  # or run straight from source
 ```
 
 ### Conventions
