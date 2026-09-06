@@ -28,6 +28,28 @@ async function main() {
   const assetToken = await AssetToken.deploy(deployer.address, await roleRegistry.getAddress());
   await assetToken.waitForDeployment();
 
+  const CredentialStatus = await ethers.getContractFactory("CredentialStatus");
+  const credentialStatus = await CredentialStatus.deploy(deployer.address);
+  await credentialStatus.waitForDeployment();
+
+  const GUARDIAN_TIMELOCK = 48 * 60 * 60;
+  const GuardianRecovery = await ethers.getContractFactory("GuardianRecovery");
+  const guardianRecovery = await GuardianRecovery.deploy(
+    deployer.address,
+    await identityRegistry.getAddress(),
+    await roleRegistry.getAddress(),
+    GUARDIAN_TIMELOCK,
+  );
+  await guardianRecovery.waitForDeployment();
+
+  // GuardianRecovery acts for a guardian quorum, so it holds the rights to
+  // rotate an identity and move a credential. No administrator key is involved
+  // in a recovery, which is the point of it.
+  const recoveryAddress = await guardianRecovery.getAddress();
+  await (await identityRegistry.grantRole(await identityRegistry.ROTATOR_ROLE(), recoveryAddress)).wait();
+  await (await roleRegistry.grantRole(await roleRegistry.ISSUER_ROLE(), recoveryAddress)).wait();
+  await (await roleRegistry.grantRole(await roleRegistry.REVOKER_ROLE(), recoveryAddress)).wait();
+
   const deployment = {
     network: network.name,
     chainId: Number((await ethers.provider.getNetwork()).chainId),
@@ -37,6 +59,8 @@ async function main() {
       IdentityRegistry: await identityRegistry.getAddress(),
       RoleRegistry: await roleRegistry.getAddress(),
       AssetToken: await assetToken.getAddress(),
+      CredentialStatus: await credentialStatus.getAddress(),
+      GuardianRecovery: recoveryAddress,
     },
   };
 

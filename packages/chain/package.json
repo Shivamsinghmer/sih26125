@@ -11,7 +11,9 @@
     "test": "vitest run",
     "demo": "bun run scripts/demo.ts",
     "clean": "rm -rf dist",
-    "export": "bun run scripts/export-bundle.ts"
+    "export": "bun run scripts/export-bundle.ts",
+    "besu:genesis": "bun run scripts/generate-besu-genesis.ts",
+    "besu:verify": "bun run scripts/verify-besu.ts"
   },
   "dependencies": {
     "@sih26125/identity": "workspace:*",
@@ -19,6 +21,7 @@
     "@sih26125/custody": "workspace:*"
   },
   "devDependencies": {
+    "@noble/curves": "^1.7.0",
     "@sih26125/contracts": "workspace:*",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0"

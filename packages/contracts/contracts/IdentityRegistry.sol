@@ -9,6 +9,8 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 /// so an erasure request only ever touches the off-chain record.
 contract IdentityRegistry is AccessControl {
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
+    /// @dev Held by GuardianRecovery, so key rotation never needs an admin key.
+    bytes32 public constant ROTATOR_ROLE = keccak256("ROTATOR_ROLE");
 
     enum Status {
         Unregistered,
@@ -27,11 +29,13 @@ contract IdentityRegistry is AccessControl {
 
     event IdentityRegistered(address indexed account, string did, address indexed issuer);
     event IdentityStatusChanged(address indexed account, Status status, address indexed changedBy);
+    event IdentityKeyRotated(address indexed oldAccount, address indexed newAccount, string did);
 
     error ZeroAddress();
     error EmptyDid();
     error AlreadyRegistered(address account);
     error NotRegistered(address account);
+    error SameAccount();
 
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
@@ -51,6 +55,27 @@ contract IdentityRegistry is AccessControl {
         if (_identities[account].status == Status.Unregistered) revert NotRegistered(account);
         _identities[account].status = status;
         emit IdentityStatusChanged(account, status, msg.sender);
+    }
+
+    /// @notice Move an identity onto a new signing key, keeping its DID and its
+    /// registration date. Restricted to ROTATOR_ROLE, which GuardianRecovery holds
+    /// so that a lost key is recovered by a guardian quorum rather than by an
+    /// administrator acting alone.
+    ///
+    /// Assets already held by the old key are not moved here — AssetToken owns that
+    /// mapping, and `batchReassign` is the operation for it. Keeping the two
+    /// separate means a recovery cannot quietly move custody as a side effect.
+    function rotateAccount(address oldAccount, address newAccount) external onlyRole(ROTATOR_ROLE) {
+        if (newAccount == address(0)) revert ZeroAddress();
+        if (oldAccount == newAccount) revert SameAccount();
+        Identity memory existing = _identities[oldAccount];
+        if (existing.status == Status.Unregistered) revert NotRegistered(oldAccount);
+        if (_identities[newAccount].status != Status.Unregistered) revert AlreadyRegistered(newAccount);
+
+        _identities[newAccount] = existing;
+        delete _identities[oldAccount];
+
+        emit IdentityKeyRotated(oldAccount, newAccount, existing.did);
     }
 
     function get(address account) external view returns (Identity memory) {

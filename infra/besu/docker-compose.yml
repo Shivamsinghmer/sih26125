@@ -1,0 +1,107 @@
+# Four-validator Hyperledger Besu network running QBFT consensus.
+#
+# The validators are held by different departments (see generate-besu-genesis.ts),
+# which is the substance of the security claim: rewriting history needs collusion
+# across departments rather than one compromised administrator account.
+#
+# Besu is a program we run, not code we write. There is no JDK on any developer
+# machine — the image carries its own JRE, and the only artefacts the team touches
+# are this file and a generated genesis.
+#
+#   docker compose -f infra/besu/docker-compose.yml up -d
+#   docker compose -f infra/besu/docker-compose.yml logs -f besu-node-1
+#
+# Regenerate genesis.json, static-nodes.json and the node keys with:
+#   pnpm --filter @sih26125/chain besu:genesis
+
+x-besu-common: &besu-common
+  image: hyperledger/besu:24.12.2
+  restart: unless-stopped
+  command:
+    - --genesis-file=/config/genesis.json
+    - --node-private-key-file=/config/key
+    - --data-path=/data
+    # Zero gas price. Nothing is bought or sold on this chain, and a procurement
+    # officer never has to be told what a transaction costs.
+    - --min-gas-price=0
+    - --p2p-port=30303
+    # Peers come from static-nodes.json rather than discovery, so the network
+    # forms identically every time — including on a venue laptop with no
+    # working multicast.
+    - --discovery-enabled=false
+    # Kept in /config rather than /data: Besu's entrypoint chowns the data
+    # directory on start, and a read-only bind mount inside it fails.
+    - --static-nodes-file=/config/static-nodes.json
+    - --rpc-http-enabled
+    - --rpc-http-host=0.0.0.0
+    - --rpc-http-port=8545
+    - --rpc-http-api=ETH,NET,WEB3,QBFT,ADMIN,TXPOOL
+    - --rpc-http-cors-origins=all
+    - --host-allowlist=*
+
+services:
+  besu-node-1:
+    <<: *besu-common
+    container_name: besu-node-1
+    networks:
+      besu:
+        ipv4_address: 172.28.0.11
+    ports:
+      # Only the first node is reachable from the host; this is the RPC the
+      # deploy scripts and the console talk to.
+      - "8545:8545"
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./nodes/besu-node-1/key:/config/key:ro
+      - ./static-nodes.json:/config/static-nodes.json:ro
+      - besu-node-1-data:/data
+
+  besu-node-2:
+    <<: *besu-common
+    container_name: besu-node-2
+    networks:
+      besu:
+        ipv4_address: 172.28.0.12
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./nodes/besu-node-2/key:/config/key:ro
+      - ./static-nodes.json:/config/static-nodes.json:ro
+      - besu-node-2-data:/data
+
+  besu-node-3:
+    <<: *besu-common
+    container_name: besu-node-3
+    networks:
+      besu:
+        ipv4_address: 172.28.0.13
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./nodes/besu-node-3/key:/config/key:ro
+      - ./static-nodes.json:/config/static-nodes.json:ro
+      - besu-node-3-data:/data
+
+  besu-node-4:
+    <<: *besu-common
+    container_name: besu-node-4
+    networks:
+      besu:
+        ipv4_address: 172.28.0.14
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./nodes/besu-node-4/key:/config/key:ro
+      - ./static-nodes.json:/config/static-nodes.json:ro
+      - besu-node-4-data:/data
+
+networks:
+  besu:
+    name: besu
+    # Fixed addresses because Besu rejects a hostname in a static-nodes enode.
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  besu-node-1-data:
+  besu-node-2-data:
+  besu-node-3-data:
+  besu-node-4-data:
