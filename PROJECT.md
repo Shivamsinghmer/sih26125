@@ -339,6 +339,7 @@ once the code looks finished.
 | *"What about post-quantum?"* | Hash-anchored records survive a quantum adversary; signature schemes are rotatable. Have a one-line migration answer ready — **do not over-claim**. |
 | Demo fails on venue network | The entire system runs locally. This PS has no external dependency at all, which is precisely why it was chosen. |
 | AI-generated contract contains an admin-grants-itself-everything flaw | Every contract is read line by line by a human before the final, with the access-control graph drawn on paper. **If we cannot explain our own permission structure on a whiteboard, we lose the round regardless of the demo.** |
+| *"Who physically issues the ID card / uploads the photo?"* | Deliberately out of scope, for the same reason a photo never touches the chain: it is personal data, more re-identifying than a name, and the system's job is to authenticate a credential, not manufacture one. `IdentityRegistry.Identity` holds only `did`, `status` and `registeredAt` — no name, no photo. Printing and photo capture stay an administrative process (HR / IT Security), exactly as today; a photo would live as a file in Postgres keyed to the `people` row, never referenced on chain even by hash. The physical card's only job is to carry the `did:ethr` — as a QR code, say — so a scanner can pull live on-chain status without knowing anything else about the holder. |
 
 ---
 
