@@ -15,6 +15,11 @@ const METADATA_HASH = ethers.keccak256(ethers.toUtf8Bytes("SIGNAL-ANALYSER-SN-88
 
 async function deployFixture() {
   const [admin, manager, otherManager, plainUser, stranger] = await ethers.getSigners();
+  // `noUncheckedIndexedAccess` types these as possibly undefined; the Hardhat
+  // network always supplies 20, so assert once rather than at every use.
+  if (!admin || !manager || !otherManager || !plainUser || !stranger) {
+    throw new Error("expected at least 5 signers from the Hardhat network");
+  }
 
   const RoleRegistry = await ethers.getContractFactory("RoleRegistry");
   const roleRegistry = await RoleRegistry.deploy(admin.address);

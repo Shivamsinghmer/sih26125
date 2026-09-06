@@ -1,5 +1,5 @@
 {
-  "name": "@sih26125/chain",
+  "name": "@sih26125/custody",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,17 +9,12 @@
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "demo": "bun run scripts/demo.ts",
-    "clean": "rm -rf dist",
-    "export": "bun run scripts/export-bundle.ts"
+    "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@sih26125/identity": "workspace:*",
-    "viem": "^2.21.0",
-    "@sih26125/custody": "workspace:*"
+    "@sih26125/identity": "workspace:*"
   },
   "devDependencies": {
-    "@sih26125/contracts": "workspace:*",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0"
   }

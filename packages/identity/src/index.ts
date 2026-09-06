@@ -14,3 +14,9 @@ export {
   type IssueRoleCredentialInput,
   type VerifiedRoleCredential,
 } from "./credential.js";
+export {
+  signAttestation,
+  verifyAttestation,
+  type SignAttestationInput,
+  type VerifiedAttestation,
+} from "./attestation.js";

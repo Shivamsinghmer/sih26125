@@ -19,6 +19,10 @@ const InvalidReason = {
 
 async function deployFixture() {
   const [admin, employee, outsider] = await ethers.getSigners();
+  // See AssetToken.test.ts — `noUncheckedIndexedAccess` needs one assertion here.
+  if (!admin || !employee || !outsider) {
+    throw new Error("expected at least 3 signers from the Hardhat network");
+  }
   const RoleRegistry = await ethers.getContractFactory("RoleRegistry");
   const roleRegistry = await RoleRegistry.deploy(admin.address);
   const oneYearOut = (await time.latest()) + 365 * 24 * 60 * 60;
