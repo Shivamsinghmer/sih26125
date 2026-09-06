@@ -1,8 +1,10 @@
 import { AdminPanel } from "@/components/AdminPanel";
+import { AuditTrail } from "@/components/AuditTrail";
 import { SeedButton } from "@/components/SeedButton";
 import { TransferPanel, type AssetOption, type PersonaOption } from "@/components/TransferPanel";
 import { Card, Section } from "@/components/ui";
 import { personaByAddress, shortAddress } from "@/lib/chain";
+import { loadAuditTrail } from "@/lib/audit";
 import { loadConsoleState } from "@/lib/state";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +27,10 @@ pnpm --filter @sih26125/contracts deploy:local`}
 }
 
 export default async function ConsolePage() {
-  const state = await loadConsoleState();
+  const [state, auditTrail] = await Promise.all([
+    loadConsoleState(),
+    loadAuditTrail(),
+  ]);
 
   const personaOptions: PersonaOption[] =
     state?.personas.map((p) => ({
@@ -171,6 +176,10 @@ export default async function ConsolePage() {
 
           <Section eyebrow="Step 4" title="Issue, revoke, mint">
             <AdminPanel personas={personaOptions} />
+          </Section>
+
+          <Section eyebrow="Step 5" title="Replay the whole history">
+            <AuditTrail entries={auditTrail ?? []} />
           </Section>
         </>
       )}
