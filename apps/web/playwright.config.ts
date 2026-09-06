@@ -8,10 +8,15 @@ import { defineConfig, devices } from "@playwright/test";
  * change cannot break it silently — a red test the night before is recoverable,
  * a broken demo on stage is not.
  *
- * Needs a chain and a deployment first:
- *   pnpm --filter @sih26125/contracts node
- *   pnpm --filter @sih26125/contracts deploy:local
- *   pnpm --filter @sih26125/chain seed
+ * These assert specific preconditions — Priya holding asset #1, Rahul holding
+ * only User — so they must run against known state, not whatever the last
+ * script left behind. Run from the repo root:
+ *
+ *   pnpm --filter @sih26125/contracts node   # once, in another terminal
+ *   pnpm e2e                                 # redeploys, reseeds, then tests
+ *
+ * Running `playwright test` directly skips the reset and will fail against a
+ * chain some other script has already moved.
  */
 export default defineConfig({
   testDir: "./e2e",

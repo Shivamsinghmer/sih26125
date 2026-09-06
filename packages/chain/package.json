@@ -6,14 +6,15 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "demo": "bun run scripts/demo.ts",
-    "clean": "rm -rf dist",
-    "export": "bun run scripts/export-bundle.ts",
     "besu:genesis": "bun run scripts/generate-besu-genesis.ts",
-    "besu:verify": "bun run scripts/verify-besu.ts"
+    "besu:verify": "bun run scripts/verify-besu.ts",
+    "build": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "demo": "bun run scripts/demo.ts",
+    "export": "bun run scripts/export-bundle.ts",
+    "seed": "bun run scripts/seed.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@sih26125/identity": "workspace:*",

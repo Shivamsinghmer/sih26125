@@ -25,7 +25,17 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${displaySerif.variable} ${bodySans.variable}`}>
+    // Browser extensions commonly stamp attributes onto <html> before React
+    // hydrates (password managers, accessibility tools, and whatever adds
+    // `data-cap-chrome-extension-installed`). That is a difference React cannot
+    // reconcile and cannot fix, so it warns. Suppression here is shallow — it
+    // covers this element's own attributes only, so a real hydration mismatch
+    // inside any component still reports normally.
+    <html
+      lang="en"
+      className={`${displaySerif.variable} ${bodySans.variable}`}
+      suppressHydrationWarning
+    >
       <body>{children}</body>
     </html>
   );
