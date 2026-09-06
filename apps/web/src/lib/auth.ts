@@ -15,21 +15,23 @@ export { ROLE_ACCESS, ROLE_HOME, ROLE_LABEL, canAccess };
 export type { ConsoleRole };
 
 /**
- * Who may open the console, as opposed to what the chain will let them do.
+ * Terminal accounts — devices, not people.
  *
- * These are two different questions and the system answers them in two
- * different places, deliberately:
+ * People do not have rows here. They sign in by proving possession of a key
+ * (see `keystore.ts` and `siwe-actions.ts`), and their console role is read
+ * from the chain, so revoking an Admin credential also takes away the console
+ * with no second place to remember.
  *
- *   - **This file** decides who may load a page. It is ordinary application
- *     auth — a password, a session cookie — because "can this browser see the
- *     admin screen" is a UI concern.
- *   - **The contracts** decide what actually happens. `AssetToken._update`
- *     consults `RoleRegistry` on every transfer regardless of who is logged in,
- *     so a compromised session cannot move an asset to someone uncredentialled.
+ * A gate post is different. It is a fixed device at a door, staffed by whoever
+ * is on shift, and issuing every guard a personal key to unlock a shared
+ * terminal would be ceremony without security. So the terminal itself is
+ * provisioned with a credential, the way a card reader is provisioned today —
+ * and that is all this table holds.
  *
- * That separation is the point. If logging in were enough to move an asset, the
- * login would be the security control, and we would have rebuilt the
- * centralised system this project exists to replace.
+ * It is worth being precise about why this is not the thing the project
+ * criticises. An editable table of *permissions* would be; a table of device
+ * credentials is not. Nothing here grants authority over an asset: the gate
+ * view is read-only, and every state change is still gated by the contracts.
  */
 
 const scrypt = promisify(scryptCallback) as (
@@ -60,15 +62,15 @@ async function hash(password: string, salt: Buffer): Promise<Buffer> {
 }
 
 /**
- * Demo accounts. Passwords are weak and published on purpose — this is a
- * hackathon demo, and pretending otherwise by hiding them would only make the
- * next person guess. A real deployment seeds no default accounts at all and
- * provisions the first administrator out of band.
+ * The demo terminal. Its password is weak and published on purpose — hiding it
+ * would only make the next person guess. A real deployment provisions each
+ * terminal with its own generated credential when the device is installed.
+ *
+ * There is deliberately no admin or auditor row: those are people, and people
+ * sign in with a key.
  */
 const DEFAULT_USERS: Array<ConsoleUser & { password: string }> = [
-  { username: "admin", password: "admin123", displayName: "S. Raghavan", role: "admin" },
-  { username: "guard", password: "guard123", displayName: "Gate Post 3", role: "guard" },
-  { username: "auditor", password: "auditor123", displayName: "K. Iyer", role: "auditor" },
+  { username: "gate-3", password: "gate-post-3", displayName: "Gate Post 3", role: "guard" },
 ];
 
 async function ensureReady() {
@@ -84,18 +86,24 @@ async function ensureReady() {
     )
   `;
 
-  const existing = await sql`select count(*)::int as count from console_users`;
-  if ((existing[0]?.count ?? 0) === 0) {
-    for (const user of DEFAULT_USERS) {
-      const salt = randomBytes(16);
-      const digest = await hash(user.password, salt);
-      await sql`
-        insert into console_users (username, display_name, role, salt, password_hash)
-        values (${user.username}, ${user.displayName}, ${user.role},
-                ${salt.toString("hex")}, ${digest.toString("hex")})
-        on conflict do nothing
-      `;
-    }
+  // Two rounds of leftovers to clear, both of which are live credentials that
+  // should no longer open anything:
+  //   - People used to have password rows. They sign in with a key now.
+  //   - The demo terminal was renamed from "guard" to "gate-3".
+  await sql`delete from console_users where role <> 'guard' or username = 'guard'`;
+
+  // Seeded per row rather than only when the table is empty. Gating on "empty"
+  // silently skips a newly added or renamed terminal whenever any other row
+  // survives — which is exactly what happened to gate-3.
+  for (const user of DEFAULT_USERS) {
+    const salt = randomBytes(16);
+    const digest = await hash(user.password, salt);
+    await sql`
+      insert into console_users (username, display_name, role, salt, password_hash)
+      values (${user.username}, ${user.displayName}, ${user.role},
+              ${salt.toString("hex")}, ${digest.toString("hex")})
+      on conflict (username) do nothing
+    `;
   }
   ready = true;
 }

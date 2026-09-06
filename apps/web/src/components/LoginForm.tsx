@@ -12,7 +12,7 @@ export function LoginForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-2">
-        <span className="text-caption leading-caption text-slate-gray">Username</span>
+        <span className="text-caption leading-caption text-slate-gray">Terminal ID</span>
         <input
           name="username"
           autoComplete="username"
@@ -41,7 +41,7 @@ export function LoginForm() {
 
       <div className="mt-2">
         <PillButton type="submit" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? "Signing in…" : "Sign in as terminal"}
         </PillButton>
       </div>
     </form>

@@ -9,6 +9,10 @@ import { expect, test } from "@playwright/test";
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
+const ADMIN_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+/** Hardhat account #9 — a real key that holds no credential on this chain. */
+const STRANGER_KEY = "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6";
+
 test("the landing page is public", async ({ page }) => {
   await page.goto("/");
   await expect(
@@ -26,23 +30,44 @@ for (const path of ["/console", "/gate", "/audit"]) {
   });
 }
 
-test("a wrong password is refused without saying which half was wrong", async ({ page }) => {
+test("a key with no on-chain credential is refused, however valid the signature", async ({
+  page,
+}) => {
   await page.goto("/login");
-  await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill("not-the-password");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("Private key").fill(STRANGER_KEY);
+  await page.getByLabel(/Passphrase to encrypt/).fill("demo-passphrase");
+  await page.getByRole("button", { name: "Store key and sign in" }).click();
 
-  // Scoped to the form's own alert: Next injects a route announcer that also
-  // carries role="alert", so a bare getByRole("alert") matches two elements.
-  await expect(page.locator('form p[role="alert"]')).toHaveText(/do not match/i);
+  // The signature is genuine — the chain simply records nothing for this
+  // address, which is the point: authority comes from the chain, not the key.
+  await expect(page.locator('form p[role="alert"]')).toContainText(
+    /no Admin or Auditor credential/i,
+  );
   await expect(page).toHaveURL(/\/login/);
 });
 
-test("a guard reaches the gate and is kept out of the console", async ({ page }) => {
+test("a wrong passphrase does not unlock the stored key", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("Username").fill("guard");
-  await page.getByLabel("Password").fill("guard123");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("Private key").fill(ADMIN_KEY);
+  await page.getByLabel(/Passphrase to encrypt/).fill("correct-passphrase");
+  await page.getByRole("button", { name: "Store key and sign in" }).click();
+  await page.waitForURL("**/console");
+
+  // Come back with the key still in the browser and get the passphrase wrong.
+  await page.goto("/login");
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.getByLabel("Passphrase", { exact: true }).fill("wrong-passphrase");
+  await page.getByRole("button", { name: "Unlock and sign in" }).click();
+
+  await expect(page.locator('form p[role="alert"]')).toContainText(/does not unlock/i);
+});
+
+test("a terminal reaches the gate and is kept out of the console", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Terminal ID").fill("gate-3");
+  await page.getByLabel("Password").fill("gate-post-3");
+  await page.getByRole("button", { name: "Sign in as terminal" }).click();
 
   await page.waitForURL("**/gate");
   await expect(page.getByRole("heading", { name: "Gate check" })).toBeVisible();
@@ -55,13 +80,16 @@ test("a guard reaches the gate and is kept out of the console", async ({ page })
   await expect(page).toHaveURL(/\/gate/);
 });
 
-test("an auditor gets the replay and nothing that changes state", async ({ page }) => {
+test("a wrong terminal password is refused without saying which half was wrong", async ({
+  page,
+}) => {
   await page.goto("/login");
-  await page.getByLabel("Username").fill("auditor");
-  await page.getByLabel("Password").fill("auditor123");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("Terminal ID").fill("gate-3");
+  await page.getByLabel("Password").fill("not-the-password");
+  await page.getByRole("button", { name: "Sign in as terminal" }).click();
 
-  await page.waitForURL("**/audit");
-  await expect(page.getByRole("heading", { name: "Replay the whole history" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Revoke credential/ })).toHaveCount(0);
+  // Scoped to the form's own alert: Next injects a route announcer that also
+  // carries role="alert", so a bare getByRole("alert") matches two elements.
+  await expect(page.locator('form p[role="alert"]')).toHaveText(/do not match/i);
+  await expect(page).toHaveURL(/\/login/);
 });
