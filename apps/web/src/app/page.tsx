@@ -1,9 +1,10 @@
+import { AddPersonPanel } from "@/components/AddPersonPanel";
 import { AdminPanel } from "@/components/AdminPanel";
 import { AuditTrail } from "@/components/AuditTrail";
 import { SeedButton } from "@/components/SeedButton";
 import { TransferPanel, type AssetOption, type PersonaOption } from "@/components/TransferPanel";
 import { Card, Section } from "@/components/ui";
-import { personaByAddress, shortAddress } from "@/lib/chain";
+import { loadPeople, personaByAddress, shortAddress } from "@/lib/chain";
 import { loadAuditTrail } from "@/lib/audit";
 import { loadConsoleState } from "@/lib/state";
 
@@ -27,9 +28,10 @@ pnpm --filter @sih26125/contracts deploy:local`}
 }
 
 export default async function ConsolePage() {
-  const [state, auditTrail] = await Promise.all([
+  const [state, auditTrail, people] = await Promise.all([
     loadConsoleState(),
     loadAuditTrail(),
+    loadPeople(),
   ]);
 
   const personaOptions: PersonaOption[] =
@@ -43,7 +45,7 @@ export default async function ConsolePage() {
   const assetOptions: AssetOption[] =
     state?.assets.map((a) => ({
       tokenId: a.tokenId.toString(),
-      ownerId: personaByAddress(a.owner)?.id ?? null,
+      ownerId: personaByAddress(people, a.owner)?.id ?? null,
       requiredRoleLabel: a.requiredRoleLabel,
     })) ?? [];
 
@@ -122,8 +124,22 @@ export default async function ConsolePage() {
                 );
               })}
             </div>
-            <div className="mt-8">
-              <SeedButton />
+            <div className="mt-10 border-t border-mist-gray pt-8">
+              <h3 className="text-subheading leading-subheading">Onboard someone new</h3>
+              <div className="mt-5">
+                <AddPersonPanel />
+              </div>
+            </div>
+
+            <div className="mt-10 border-t border-mist-gray pt-8">
+              <h3 className="text-subheading leading-subheading">Reset to the demo state</h3>
+              <p className="mt-1 max-w-[70ch] text-caption leading-caption text-slate-gray">
+                Registers the three demo identities, issues their credentials and
+                mints one asset. Safe to run more than once.
+              </p>
+              <div className="mt-5">
+                <SeedButton />
+              </div>
             </div>
           </Section>
 
@@ -145,7 +161,7 @@ export default async function ConsolePage() {
                   </thead>
                   <tbody className="text-body">
                     {state.assets.map((asset) => {
-                      const holder = personaByAddress(asset.owner);
+                      const holder = personaByAddress(people, asset.owner);
                       return (
                         <tr key={asset.tokenId.toString()} className="border-t border-mist-gray">
                           <td className="py-4 tabular">#{asset.tokenId.toString()}</td>

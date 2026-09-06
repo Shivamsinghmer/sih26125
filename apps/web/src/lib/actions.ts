@@ -8,7 +8,10 @@ import { Role, didFromAddress, issueRoleCredential } from "@sih26125/identity";
 
 import { type ActionResult } from "./action-types";
 import {
+  addPerson,
+  loadPeople,
   personaById,
+  privateKeyFor,
   publicClient,
   readDeployment,
   walletFor,
@@ -86,9 +89,10 @@ async function attempt(
  */
 export async function seedDemo(): Promise<ActionResult> {
   const deployment = requireDeployment();
-  const admin = personaById("admin");
-  const manager = personaById("manager");
-  const user = personaById("user");
+  const people = await loadPeople();
+  const admin = personaById(people, "admin");
+  const manager = personaById(people, "manager");
+  const user = personaById(people, "user");
   const expiry = BigInt(now() + 30 * DAY);
 
   return attempt(async () => {
@@ -136,8 +140,9 @@ export async function grantRoleAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const deployment = requireDeployment();
-  const admin = personaById("admin");
-  const subject = personaById(String(formData.get("persona")));
+  const people = await loadPeople();
+  const admin = personaById(people, "admin");
+  const subject = personaById(people, String(formData.get("persona")));
   const role = Number(formData.get("role")) as Role;
   const days = Number(formData.get("days") ?? 30);
 
@@ -157,8 +162,9 @@ export async function revokeRoleAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const deployment = requireDeployment();
-  const admin = personaById("admin");
-  const subject = personaById(String(formData.get("persona")));
+  const people = await loadPeople();
+  const admin = personaById(people, "admin");
+  const subject = personaById(people, String(formData.get("persona")));
   const role = Number(formData.get("role")) as Role;
 
   return attempt(
@@ -176,8 +182,9 @@ export async function mintAssetAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const deployment = requireDeployment();
-  const admin = personaById("admin");
-  const holder = personaById(String(formData.get("persona")));
+  const people = await loadPeople();
+  const admin = personaById(people, "admin");
+  const holder = personaById(people, String(formData.get("persona")));
   const role = Number(formData.get("role")) as Role;
 
   return attempt(
@@ -201,8 +208,9 @@ export async function attemptTransferAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const deployment = requireDeployment();
-  const from = personaById(String(formData.get("from")));
-  const to = personaById(String(formData.get("to")));
+  const people = await loadPeople();
+  const from = personaById(people, String(formData.get("from")));
+  const to = personaById(people, String(formData.get("to")));
   const tokenId = BigInt(String(formData.get("tokenId")));
 
   return attempt(
@@ -222,13 +230,14 @@ export async function issueCredentialAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const deployment = requireDeployment();
-  const admin = personaById("admin");
-  const subject = personaById(String(formData.get("persona")));
+  const people = await loadPeople();
+  const admin = personaById(people, "admin");
+  const subject = personaById(people, String(formData.get("persona")));
   const role = Number(formData.get("role")) as Role;
 
   try {
     const jwt = await issueRoleCredential({
-      issuerPrivateKey: admin.privateKey,
+      issuerPrivateKey: privateKeyFor(admin),
       issuerAddress: admin.address,
       subjectAddress: subject.address,
       role,
@@ -254,4 +263,74 @@ export async function seedDemoAction(
   _formData: FormData,
 ): Promise<ActionResult> {
   return seedDemo();
+}
+
+/**
+ * Add a person: create their record off chain, then give them a decentralised
+ * identity on chain.
+ *
+ * Note what goes where. Name and title are personal data and stay in Postgres.
+ * What reaches the chain is a DID, a public key and a status flag — nothing
+ * that identifies a human being. That split is what makes an erasure request
+ * answerable later: delete the row, and the on-chain record becomes an orphan
+ * that points at nobody.
+ *
+ * The signing key is derived from an HD index, so onboarding never writes a
+ * private key anywhere.
+ */
+export async function addPersonAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const deployment = requireDeployment();
+  const name = String(formData.get("name") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const role = Number(formData.get("role") ?? 0) as Role;
+  const days = Number(formData.get("days") ?? 30);
+
+  if (name.length < 2) {
+    return { status: "error", message: "Enter the person's name." };
+  }
+
+  const people = await loadPeople();
+  const admin = personaById(people, "admin");
+
+  let created;
+  try {
+    created = await addPerson({ name, title: title || "Unassigned" });
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof Error ? error.message : "Could not create the person record.",
+    };
+  }
+
+  return attempt(async () => {
+    await send(
+      admin,
+      deployment.contracts.IdentityRegistry,
+      identityRegistryAbi,
+      "register",
+      [created.address, didFromAddress(created.address, deployment.chainId)],
+    );
+
+    if (role !== Role.None) {
+      return send(
+        admin,
+        deployment.contracts.RoleRegistry,
+        roleRegistryAbi,
+        "grantBusinessRole",
+        [created.address, role, BigInt(now() + days * DAY)],
+      );
+    }
+
+    return send(
+      admin,
+      deployment.contracts.IdentityRegistry,
+      identityRegistryAbi,
+      "setStatus",
+      [created.address, 1],
+    );
+  }, `${created.name} onboarded — DID registered, ${role === Role.None ? "no role yet" : `${Role[role]} credential issued`}.`);
 }

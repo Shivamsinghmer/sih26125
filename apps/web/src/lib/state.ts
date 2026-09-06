@@ -4,7 +4,7 @@ import { assetTokenAbi, identityRegistryAbi, roleRegistryAbi } from "@sih26125/c
 import { Role, roleName } from "@sih26125/identity";
 
 import {
-  PERSONAS,
+  loadPeople,
   publicClient,
   readDeployment,
   type Deployment,
@@ -144,8 +144,9 @@ export async function loadConsoleState(): Promise<ConsoleState | null> {
   if (!deployment) return null;
 
   try {
+    const people = await loadPeople();
     const [personas, assets] = await Promise.all([
-      Promise.all(PERSONAS.map((p) => loadPersona(p, deployment))),
+      Promise.all(people.map((p) => loadPersona(p, deployment))),
       loadAssets(deployment),
     ]);
     return { deployment, personas, assets };

@@ -3,7 +3,14 @@ import { parseEventLogs, type Address, type Log } from "viem";
 import { assetTokenAbi, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
 import { Role, roleName } from "@sih26125/identity";
 
-import { personaByAddress, publicClient, readDeployment, shortAddress } from "./chain";
+import {
+  loadPeople,
+  personaByAddress,
+  publicClient,
+  readDeployment,
+  shortAddress,
+  type Persona,
+} from "./chain";
 
 /**
  * The auditor's replay.
@@ -35,10 +42,10 @@ export interface AuditEntry {
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
-function who(address?: string): string {
+function who(people: Persona[], address?: string): string {
   if (!address) return "an unknown account";
   if (address.toLowerCase() === ZERO) return "nobody";
-  return personaByAddress(address)?.name ?? shortAddress(address);
+  return personaByAddress(people, address)?.name ?? shortAddress(address);
 }
 
 function when(expiry?: bigint): string {
@@ -57,41 +64,35 @@ function roleLabel(value: unknown): string {
 type DecodedLog = Log & { eventName?: string; args?: Record<string, unknown> };
 
 function describe(
-  contract: AuditContract,
+  people: Persona[],
   eventName: string,
   args: Record<string, unknown>,
 ): { description: string; emphasis?: boolean } | null {
   switch (eventName) {
     case "IdentityRegistered":
       return {
-        description: `Decentralised identity registered for ${who(args.account as string)} — ${String(args.did)}`,
+        description: `Decentralised identity registered for ${who(people, args.account as string)} — ${String(args.did)}`,
       };
 
     case "IdentityStatusChanged":
       return {
-        description: `Identity status changed for ${who(args.account as string)}`,
+        description: `Identity status changed for ${who(people, args.account as string)}`,
       };
 
     case "BusinessRoleGranted":
       return {
-        description: `${roleLabel(args.role)} credential issued to ${who(
-          args.account as string,
-        )} by ${who(args.issuer as string)}, valid until ${when(args.expiry as bigint)}`,
+        description: `${roleLabel(args.role)} credential issued to ${who(people, args.account as string)} by ${who(people, args.issuer as string)}, valid until ${when(args.expiry as bigint)}`,
       };
 
     case "BusinessRoleRevoked":
       return {
-        description: `${roleLabel(args.role)} credential revoked for ${who(
-          args.account as string,
-        )} by ${who(args.revoker as string)}`,
+        description: `${roleLabel(args.role)} credential revoked for ${who(people, args.account as string)} by ${who(people, args.revoker as string)}`,
         emphasis: true,
       };
 
     case "AssetMinted":
       return {
-        description: `Asset #${String(args.tokenId)} minted to ${who(
-          args.to as string,
-        )}, requires a ${roleLabel(args.requiredRole)} credential to hold`,
+        description: `Asset #${String(args.tokenId)} minted to ${who(people, args.to as string)}, requires a ${roleLabel(args.requiredRole)} credential to hold`,
       };
 
     case "Transfer": {
@@ -101,7 +102,7 @@ function describe(
       // zero-address Transfer that accompanies it rather than showing both.
       if (from?.toLowerCase() === ZERO) return null;
       return {
-        description: `Asset #${String(args.tokenId)} moved from ${who(from)} to ${who(to)}`,
+        description: `Asset #${String(args.tokenId)} moved from ${who(people, from)} to ${who(people, to)}`,
         emphasis: true,
       };
     }
@@ -114,6 +115,7 @@ function describe(
 }
 
 async function collect(
+  people: Persona[],
   address: Address,
   abi: readonly unknown[],
   contract: AuditContract,
@@ -132,7 +134,7 @@ async function collect(
   const entries: AuditEntry[] = [];
   for (const log of parsed) {
     if (!log.eventName) continue;
-    const described = describe(contract, log.eventName, log.args ?? {});
+    const described = describe(people, log.eventName, log.args ?? {});
     if (!described) continue;
 
     entries.push({
@@ -155,10 +157,11 @@ export async function loadAuditTrail(): Promise<AuditEntry[] | null> {
   if (!deployment) return null;
 
   try {
+    const people = await loadPeople();
     const groups = await Promise.all([
-      collect(deployment.contracts.IdentityRegistry, identityRegistryAbi, "IdentityRegistry"),
-      collect(deployment.contracts.RoleRegistry, roleRegistryAbi, "RoleRegistry"),
-      collect(deployment.contracts.AssetToken, assetTokenAbi, "AssetToken"),
+      collect(people, deployment.contracts.IdentityRegistry, identityRegistryAbi, "IdentityRegistry"),
+      collect(people, deployment.contracts.RoleRegistry, roleRegistryAbi, "RoleRegistry"),
+      collect(people, deployment.contracts.AssetToken, assetTokenAbi, "AssetToken"),
     ]);
 
     const entries = groups.flat().sort((a, b) => {
