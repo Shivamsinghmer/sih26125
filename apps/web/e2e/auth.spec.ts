@@ -12,6 +12,8 @@ test.use({ storageState: { cookies: [], origins: [] } });
 const ADMIN_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 /** Hardhat account #9 — a real key that holds no credential on this chain. */
 const STRANGER_KEY = "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6";
+/** Hardhat account #3 — K. Iyer, who holds the Auditor credential. */
+const AUDITOR_KEY = "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6";
 
 test("the landing page is public", async ({ page }) => {
   await page.goto("/");
@@ -92,4 +94,22 @@ test("a wrong terminal password is refused without saying which half was wrong",
   // carries role="alert", so a bare getByRole("alert") matches two elements.
   await expect(page.locator('form p[role="alert"]')).toHaveText(/do not match/i);
   await expect(page).toHaveURL(/\/login/);
+});
+
+test("an auditor reaches the replay and nothing that changes state", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Private key").fill(AUDITOR_KEY);
+  await page.getByLabel(/Passphrase to encrypt/).fill("demo-passphrase");
+  await page.getByRole("button", { name: "Store key and sign in" }).click();
+
+  // Their role comes from the chain, not from anything chosen at sign-in.
+  await page.waitForURL("**/audit");
+  await expect(page.getByRole("heading", { name: "Replay the whole history" })).toBeVisible();
+
+  // An auditor who can also issue credentials is not an auditor.
+  await expect(page.getByRole("button", { name: /Revoke credential/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Console" })).toHaveCount(0);
+
+  await page.goto("/console");
+  await expect(page).toHaveURL(/\/audit/);
 });

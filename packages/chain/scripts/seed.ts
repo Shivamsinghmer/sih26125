@@ -39,6 +39,14 @@ const PEOPLE = [
     name: "Rahul Nair",
     role: Role.User,
   },
+  {
+    // Without an Auditor on chain nobody can sign into /audit — the console
+    // reads its role from RoleRegistry, so an unheld role is an unreachable
+    // surface.
+    key: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+    name: "K. Iyer",
+    role: Role.Auditor,
+  },
 ] as const;
 
 const admin = privateKeyToAccount(PEOPLE[0].key as Hex);

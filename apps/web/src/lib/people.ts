@@ -15,8 +15,7 @@ import { mnemonicToAccount } from "viem/accounts";
  *     never touch the chain. An erasure request deletes the row; the on-chain
  *     DID and its salted hash become an irreversible orphan.
  *   - The account is derived, not stored. Each person holds an index into an
- *     HD wallet, so no private key is ever written to the database. Index 0, 1
- *     and 2 reproduce the three accounts the demo has always used.
+ *     HD wallet, so no private key is ever written to the database.
  *
  * For the demo the seed is Hardhat's published development mnemonic, so every
  * derived account is pre-funded on both the local chain and in the Besu genesis.
@@ -62,18 +61,20 @@ let client: ReturnType<typeof postgres> | null = null;
 let ready = false;
 
 function connection() {
-  client ??= postgres(DATABASE_URL, { max: 4 });
+  client ??= postgres(DATABASE_URL, { max: 4, onnotice: () => {} });
   return client;
 }
 
 /**
- * The people the demo opens with. Inserted only when the table is empty, so
- * anyone added through the console is never overwritten.
+ * The people the demo opens with. Inserted by id with ON CONFLICT DO NOTHING,
+ * so anyone added through the console is never overwritten and a default added
+ * later still reaches databases that already exist.
  */
 export const DEFAULT_PEOPLE = [
   { id: "admin", name: "S. Raghavan", title: "Issuing Authority, IT Security", addressIndex: 0 },
   { id: "manager", name: "Priya Menon", title: "Divisional Manager, Radar Systems", addressIndex: 1 },
   { id: "user", name: "Rahul Nair", title: "Technician, Radar Systems", addressIndex: 2 },
+  { id: "auditor", name: "K. Iyer", title: "Internal Audit", addressIndex: 3 },
 ];
 
 async function ensureReady() {
@@ -92,15 +93,15 @@ async function ensureReady() {
   // Added after the table already existed in some environments; a plain
   // CREATE TABLE above would not backfill it there.
   await sql`alter table people add column if not exists photo text`;
-  const existing = await sql`select count(*)::int as count from people`;
-  if ((existing[0]?.count ?? 0) === 0) {
-    for (const person of DEFAULT_PEOPLE) {
-      await sql`
-        insert into people (id, name, title, address_index)
-        values (${person.id}, ${person.name}, ${person.title}, ${person.addressIndex})
-        on conflict do nothing
-      `;
-    }
+  // Seeded per row, not gated on the table being empty. Gating on "empty"
+  // silently skips any default added later — every existing database would
+  // keep the three it already had and never gain the fourth.
+  for (const person of DEFAULT_PEOPLE) {
+    await sql`
+      insert into people (id, name, title, address_index)
+      values (${person.id}, ${person.name}, ${person.title}, ${person.addressIndex})
+      on conflict (id) do nothing
+    `;
   }
   ready = true;
 }

@@ -4,14 +4,13 @@ import { revalidatePath } from "next/cache";
 import type { Hex } from "viem";
 
 import { assetTokenAbi, explainContractError, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
-import { Role, didFromAddress, issueRoleCredential } from "@sih26125/identity";
+import { Role, didFromAddress } from "@sih26125/identity";
 
 import { type ActionResult } from "./action-types";
 import {
   addPerson,
   loadPeople,
   personaById,
-  privateKeyFor,
   publicClient,
   readDeployment,
   walletFor,
@@ -20,6 +19,17 @@ import {
 
 const DAY = 86_400;
 const now = () => Math.floor(Date.now() / 1000);
+
+/**
+ * Refresh the surfaces that render chain state. These used to revalidate "/",
+ * which stopped being the console when the landing page took that route — so
+ * every mutation was refreshing the one page that shows none of this.
+ */
+function revalidateConsole() {
+  revalidatePath("/console");
+  revalidatePath("/audit");
+  revalidatePath("/gate");
+}
 
 function requireDeployment() {
   const deployment = readDeployment();
@@ -56,7 +66,7 @@ async function attempt(
 ): Promise<ActionResult> {
   try {
     const receipt = await run();
-    revalidatePath("/");
+    revalidateConsole();
     return {
       status: "success",
       message: successMessage,
@@ -65,7 +75,7 @@ async function attempt(
   } catch (error) {
     const explained = explainContractError(error);
     if (explained.reason !== "unknown") {
-      revalidatePath("/");
+      revalidateConsole();
       return {
         status: "blocked",
         title: explained.title,
@@ -84,8 +94,8 @@ async function attempt(
 /* ------------------------------------------------------------------ actions */
 
 /**
- * Put the chain into the state the demo opens from: three identities registered,
- * a Manager and a User credential issued, and one asset minted.
+ * Put the chain into the state the demo opens from: four identities registered,
+ * each with the credential their role implies, and one asset minted.
  */
 export async function seedDemo(): Promise<ActionResult> {
   const deployment = requireDeployment();
@@ -93,10 +103,11 @@ export async function seedDemo(): Promise<ActionResult> {
   const admin = personaById(people, "admin");
   const manager = personaById(people, "manager");
   const user = personaById(people, "user");
+  const auditor = personaById(people, "auditor");
   const expiry = BigInt(now() + 30 * DAY);
 
   return attempt(async () => {
-    for (const persona of [admin, manager, user]) {
+    for (const persona of [admin, manager, user, auditor]) {
       const did = didFromAddress(persona.address, deployment.chainId);
       try {
         await send(
@@ -124,6 +135,13 @@ export async function seedDemo(): Promise<ActionResult> {
     await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantBusinessRole", [
       user.address,
       Role.User,
+      expiry,
+    ]);
+    // Without this the /audit surface is unreachable: the console reads its
+    // role from RoleRegistry, so a role nobody holds is a screen nobody opens.
+    await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantBusinessRole", [
+      auditor.address,
+      Role.Auditor,
       expiry,
     ]);
 
@@ -222,39 +240,6 @@ export async function attemptTransferAction(
       ]),
     `Asset #${tokenId} transferred to ${to.name}.`,
   );
-}
-
-/** Issue a W3C Verifiable Credential the holder keeps, alongside the on-chain grant. */
-export async function issueCredentialAction(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
-  const deployment = requireDeployment();
-  const people = await loadPeople();
-  const admin = personaById(people, "admin");
-  const subject = personaById(people, String(formData.get("persona")));
-  const role = Number(formData.get("role")) as Role;
-
-  try {
-    const jwt = await issueRoleCredential({
-      issuerPrivateKey: privateKeyFor(admin),
-      issuerAddress: admin.address,
-      subjectAddress: subject.address,
-      role,
-      chainId: deployment.chainId,
-      roleRegistryAddress: deployment.contracts.RoleRegistry,
-      expiresAt: now() + 30 * DAY,
-    });
-    return {
-      status: "success",
-      message: `Verifiable Credential issued to ${subject.name} (${jwt.length} bytes, held off chain).`,
-    };
-  } catch (error) {
-    return {
-      status: "error",
-      message: error instanceof Error ? error.message : "Could not issue credential.",
-    };
-  }
 }
 
 /** Form-action shape for `seedDemo`, for use with `useActionState`. */

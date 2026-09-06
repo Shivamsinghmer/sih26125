@@ -63,6 +63,37 @@ async function deploy(
   return receipt.contractAddress;
 }
 
+/**
+ * Get a readable reason out of a failed transfer on any chain.
+ *
+ * Hardhat estimates gas first and throws carrying the revert data, so the
+ * custom error decodes straight from the thrown error. Besu with an explicit
+ * gas limit skips estimation and simply mines a receipt with status
+ * "reverted" — the gate still holds, but the sentence a judge reads is gone.
+ * Re-running the same call through `simulateContract` executes it against
+ * current state and throws with the data intact.
+ */
+async function explainBlockedTransfer(
+  error: unknown,
+  call: { address: Address; account: typeof admin; args: unknown[] },
+) {
+  const direct = explainContractError(error);
+  if (direct.reason !== "unknown") return direct;
+
+  try {
+    await publicClient.simulateContract({
+      account: call.account,
+      address: call.address,
+      abi: AssetTokenArtifact.abi as never,
+      functionName: "transferFrom",
+      args: call.args as never,
+    });
+  } catch (simulated) {
+    return explainContractError(simulated);
+  }
+  return direct;
+}
+
 async function main() {
   console.log(`\nSIH26125 — credential-gated asset custody\nRPC: ${RPC_URL}`);
 
@@ -157,7 +188,11 @@ async function main() {
     console.log("  ✗ UNEXPECTED: the transfer succeeded. The gate is not working.");
     process.exitCode = 1;
   } catch (error) {
-    const explained = explainContractError(error);
+    const explained = await explainBlockedTransfer(error, {
+      address: assetToken,
+      account: employee,
+      args: [employee.address, colleague.address, 1n],
+    });
     blocked(`${explained.title} — ${explained.detail}`);
     ok(`Decoded on chain as ${explained.errorName}`);
   }
