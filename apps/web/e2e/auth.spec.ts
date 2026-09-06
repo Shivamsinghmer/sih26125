@@ -75,7 +75,7 @@ test("a terminal reaches the gate and is kept out of the console", async ({ page
   await expect(page.getByRole("heading", { name: "Gate check" })).toBeVisible();
 
   // The nav must not offer what the role cannot open.
-  await expect(page.getByRole("link", { name: "Console" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Dashboard" })).toHaveCount(0);
 
   // And asking for it directly lands back on their own surface, not an error.
   await page.goto("/console");
@@ -108,7 +108,7 @@ test("an auditor reaches the replay and nothing that changes state", async ({ pa
 
   // An auditor who can also issue credentials is not an auditor.
   await expect(page.getByRole("button", { name: /Revoke credential/ })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Console" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Dashboard" })).toHaveCount(0);
 
   await page.goto("/console");
   await expect(page).toHaveURL(/\/audit/);

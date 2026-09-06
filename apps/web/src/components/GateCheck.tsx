@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { gateCheckAction } from "@/lib/gate-actions";
 import { GATE_IDLE } from "@/lib/gate-types";
+import { QrScanner } from "./QrScanner";
 import { PillButton } from "./ui";
 
 function formatExpiry(unix: number): string {
@@ -17,6 +18,16 @@ function formatExpiry(unix: number): string {
 
 export function GateCheck({ presets }: { presets: { label: string; did: string }[] }) {
   const [state, formAction, pending] = useActionState(gateCheckAction, GATE_IDLE);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // A scan should behave like a scanner: read it, check it, no second action.
+  function onScanned(value: string) {
+    const input = inputRef.current;
+    if (!input) return;
+    input.value = value;
+    formRef.current?.requestSubmit();
+  }
 
   const result = state.status === "found" ? state.result : null;
   const validRoles = result?.holdings.filter((h) => h.validity === "valid") ?? [];
@@ -24,14 +35,16 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
 
   return (
     <div className="flex flex-col gap-8">
-      <form action={formAction} className="flex flex-wrap items-end gap-3">
+      <QrScanner onResult={onScanned} />
+
+      <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-[320px] flex-1 flex-col gap-2">
           <span className="text-caption leading-caption text-slate-gray">
-            Scan the card&rsquo;s QR, or paste a DID / address
+            Or paste a DID / address
           </span>
           <input
+            ref={inputRef}
             name="identifier"
-            autoFocus
             placeholder="did:ethr:0x7a69:0x…"
             className="mono-addr rounded-2xl border border-mist-gray bg-paper-white px-4 py-3"
           />

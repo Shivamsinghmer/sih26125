@@ -26,7 +26,10 @@ const now = () => Math.floor(Date.now() / 1000);
  * every mutation was refreshing the one page that shows none of this.
  */
 function revalidateConsole() {
-  revalidatePath("/console");
+  // "layout" so every nested route under /console is refreshed too. Revalidating
+  // the bare path only covers that one page, which meant seeding from
+  // /console/people left the badges on that very page stale.
+  revalidatePath("/console", "layout");
   revalidatePath("/audit");
   revalidatePath("/gate");
 }

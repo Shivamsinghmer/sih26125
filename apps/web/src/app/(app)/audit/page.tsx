@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/AppHeader";
+import { PageHeading } from "@/components/PageHeading";
 import { AuditTrail } from "@/components/AuditTrail";
 import { loadAuditTrail } from "@/lib/audit";
 
@@ -13,19 +13,14 @@ export default async function AuditPage() {
   const entries = await loadAuditTrail();
 
   return (
-    <main className="mx-auto max-w-[1000px] px-6 pb-32 pt-10">
-      <AppHeader />
-
-      <h1 className="display-serif mt-14 text-heading leading-heading tracking-heading">
-        Replay the whole history
-      </h1>
-      <p className="mt-4 max-w-[66ch] text-body-lg leading-body-lg text-slate-gray">
+    <>
+      <PageHeading title="Replay the whole history">
         Every identity, credential, mint and transfer, reconstructed from chain
         events in order. Read-only by design — this view cannot change anything
         it reports on.
-      </p>
+      </PageHeading>
 
-      <div className="mt-10">
+      <div>
         {entries === null ? (
           <div className="rounded-3xl bg-mist-gray px-8 py-7">
             <p className="text-body leading-body">
@@ -36,6 +31,6 @@ export default async function AuditPage() {
           <AuditTrail entries={entries} />
         )}
       </div>
-    </main>
+    </>
   );
 }

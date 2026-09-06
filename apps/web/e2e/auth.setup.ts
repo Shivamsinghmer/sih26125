@@ -21,7 +21,7 @@ setup("authenticate as the issuing authority", async ({ page }) => {
   await page.getByRole("button", { name: "Store key and sign in" }).click();
 
   await page.waitForURL("**/console");
-  await expect(page.getByRole("link", { name: "Console" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
 
   // The keystore lives in localStorage, so origins have to be captured too or
   // the saved state signs in but cannot unlock on reuse.
