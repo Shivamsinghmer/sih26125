@@ -1,0 +1,38 @@
+# Postgres for the event indexer.
+#
+#   docker compose -f infra/postgres/docker-compose.yml up -d
+#   pnpm --filter @sih26125/indexer db:push
+#   pnpm --filter @sih26125/indexer start
+#
+# This database holds the event index and the off-chain personal data the chain
+# deliberately does not carry — name, employee number, department. Nothing here
+# is authoritative about ownership or permission: every table the indexer writes
+# can be dropped and rebuilt from chain events, and the console's audit view
+# reads the chain directly rather than querying this.
+#
+# That separation is also the DPDP answer. An erasure request deletes the
+# off-chain record and rotates its salt, leaving the on-chain hash an
+# irreversible orphan — which is only possible because the personal data lives
+# here and never there.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: sih26125-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sih26125
+    ports:
+      - "5432:5432"
+    volumes:
+      - sih26125-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sih26125"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  sih26125-pgdata:

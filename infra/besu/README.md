@@ -95,8 +95,8 @@ repo:
 
 ```bash
 docker pull hyperledger/besu:24.12.2
-docker pull postgres:16-alpine
-docker save hyperledger/besu:24.12.2 postgres:16-alpine -o sih26125-images.tar
+docker pull postgres:16
+docker save hyperledger/besu:24.12.2 postgres:16 -o sih26125-images.tar
 ```
 
 At the venue:
