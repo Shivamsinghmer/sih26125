@@ -68,7 +68,7 @@ const READINGS: Reading[] = [
     reason: "Revoked",
     ok: false,
     detail:
-      "Withdrawn 2 Sep 2026, 11:04. The card still prints perfectly — the credential behind it does not.",
+      "Withdrawn 2 Sep 2026, 11:04. The card still prints; the credential behind it does not.",
     outcome: "Asset not released. Custody unchanged.",
   },
   {
@@ -93,7 +93,7 @@ const READINGS: Reading[] = [
     reason: "Expired",
     ok: false,
     detail:
-      "Nothing was revoked. The grant reached 14 Aug 2026 and lapsed, with no one having to remember to remove it.",
+      "Nothing was revoked. The grant reached 14 Aug 2026 and lapsed on its own.",
     outcome: "Asset not released. Custody unchanged.",
   },
   {
@@ -117,17 +117,17 @@ const REGISTRIES = [
   {
     facet: "Identity",
     contract: "IdentityRegistry",
-    body: "A DID and a public key for each person. Names and photographs stay in the operator's own database — never on chain.",
+    body: "A DID and a public key per person. Names and photographs never reach the chain.",
   },
   {
     facet: "Access control",
     contract: "RoleRegistry",
-    body: "Role grants carrying an expiry and a revocation flag. checkRole() returns one of four answers, and the reader shows which.",
+    body: "Grants with an expiry and a revocation flag. checkRole() returns one of four answers.",
   },
   {
     facet: "Asset custody",
     contract: "AssetToken",
-    body: "Each controlled item is a token bound to its holder's DID, carrying its own custody history rather than a row in a spreadsheet.",
+    body: "Each item is a token bound to its holder's DID, carrying its own custody history.",
   },
 ];
 
@@ -256,10 +256,9 @@ export function GateScanner() {
           ))}
         </ul>
         <p className="scan__note">
-          Every issue, revocation, gate reading and transfer lands as a chain
-          event. The audit trail is replayed from those events rather than read
-          from a log kept beside them, so there is no second version of what
-          happened for anyone to disagree with.
+          Every issue, revocation and transfer lands as a chain event, and the
+          audit trail is replayed from those events — so there is no second
+          version to reconcile.
         </p>
       </figcaption>
       </div>
@@ -274,9 +273,9 @@ export function GateScanner() {
            vocabulary. */
         .scan__frame {
           display: grid;
-          gap: clamp(30px, 4vw, 60px);
+          gap: clamp(24px, 3.4vw, 56px);
           align-items: center;
-          padding: clamp(24px, 3.4vw, 48px);
+          padding: clamp(16px, 2.4vh, 44px) clamp(18px, 2.6vw, 44px);
           border-radius: 28px;
           background: #f2f2f3;
         }
@@ -298,13 +297,13 @@ export function GateScanner() {
         }
         .scan__reasons {
           list-style: none;
-          margin: 18px 0 0;
+          margin: clamp(12px, 1.7vh, 18px) 0 0;
           padding: 0;
         }
         .scan__reason-row {
           display: grid;
           gap: 2px 14px;
-          padding: 11px 0;
+          padding: clamp(8px, 1.2vh, 11px) 0;
           border-top: 1px solid #e0e0e3;
         }
         @media (min-width: 520px) {
@@ -334,7 +333,7 @@ export function GateScanner() {
         .scan__device {
           border-radius: 26px;
           background: #17191c;
-          padding: 14px;
+          padding: clamp(9px, 1.3vh, 14px);
           box-shadow:
             0 1px 2px rgba(0, 0, 0, 0.05),
             0 26px 60px -20px rgba(23, 25, 28, 0.42);
@@ -372,7 +371,7 @@ export function GateScanner() {
         }
         .scan__read {
           grid-area: 1 / 1;
-          padding: 18px 20px 20px;
+          padding: clamp(11px, 1.5vh, 18px) 20px clamp(11px, 1.5vh, 20px);
         }
         .scan__read[data-on="false"] { visibility: hidden; }
 
@@ -392,8 +391,8 @@ export function GateScanner() {
         }
 
         .scan__name {
-          margin: 13px 0 0;
-          font-size: 21px;
+          margin: clamp(7px, 1vh, 13px) 0 0;
+          font-size: clamp(18px, 2.2vh, 21px);
           line-height: 1.2;
           color: #17191c;
         }
@@ -407,9 +406,9 @@ export function GateScanner() {
         .scan__cred {
           display: flex;
           flex-wrap: wrap;
-          align-items: center;
-          gap: 8px 10px;
-          margin: 12px 0 0;
+          align-items: baseline;
+          gap: 6px 10px;
+          margin: clamp(6px, 0.9vh, 12px) 0 0;
         }
         .scan__by-label { font-size: 11px; color: #6f7482; }
         .scan__by { font-size: 13.5px; color: #17191c; }
@@ -418,8 +417,8 @@ export function GateScanner() {
         /* The reason block is the only part that changes colour, because the
            reason is the only part that changes meaning. */
         .scan__reason {
-          margin-top: 14px;
-          padding: 12px 14px;
+          margin-top: clamp(8px, 1.1vh, 14px);
+          padding: clamp(8px, 1.1vh, 12px) 14px;
           border-radius: 12px;
           background: #f2f2f3;
         }
@@ -444,7 +443,7 @@ export function GateScanner() {
         .scan__read[data-ok="false"] .scan__detail { color: #5d2a1a; }
 
         .scan__consequence {
-          margin: 12px 0 0;
+          margin: clamp(7px, 1vh, 12px) 0 0;
           font-size: 14px;
           line-height: 1.45;
           text-wrap: pretty;
@@ -486,8 +485,8 @@ export function GateScanner() {
            card read as sitting *in* the reader rather than floating on it. */
         .scan__slot {
           position: relative;
-          margin-top: 14px;
-          padding: 14px 6px 0;
+          margin-top: clamp(6px, 1vh, 14px);
+          padding: clamp(7px, 1vh, 14px) 6px 0;
           overflow: hidden;
         }
         .scan__card {
@@ -499,15 +498,15 @@ export function GateScanner() {
           display: flex;
           align-items: center;
           gap: 9px;
-          padding: 10px 11px 14px;
+          padding: 7px 11px 14px;
           border-radius: 9px 9px 3px 3px;
           background: #f2f2f3;
           /* Sunk into the reader; the slot's overflow hides the lower edge. */
-          transform: translateY(9px);
+          transform: translateY(12px);
         }
         .scan__card-photo {
-          width: 24px;
-          height: 28px;
+          width: 20px;
+          height: 22px;
           border-radius: 4px;
           background: #d3d4d8;
           flex: none;
@@ -527,8 +526,8 @@ export function GateScanner() {
         }
         .scan__card-line--wide { width: 72%; background: #bcbec4; }
         .scan__card-qr {
-          width: 28px;
-          height: 28px;
+          width: 22px;
+          height: 22px;
           flex: none;
           border-radius: 3px;
           background-image:
@@ -564,12 +563,37 @@ export function GateScanner() {
 
         /* ---------------------------------------------------------- caption */
         .scan__note {
-          margin: 20px 0 0;
+          margin: clamp(12px, 1.8vh, 20px) 0 0;
           max-width: 52ch;
           font-size: 13px;
           line-height: 1.55;
           text-wrap: pretty;
           color: #616675;
+        }
+
+        @media (max-height: 950px) and (min-width: 760px) {
+          .scan__frame { padding: clamp(12px, 1.7vh, 44px) clamp(16px, 2.2vw, 44px); }
+          .scan__device { padding: clamp(8px, 1.1vh, 14px); }
+          .scan__bezel { padding: clamp(7px, 1.1vh, 13px) 20px; }
+          .scan__read { padding: clamp(9px, 1.2vh, 18px) 20px clamp(9px, 1.2vh, 20px); }
+          .scan__verdict { padding: 3px 11px; }
+          .scan__cred { margin-top: clamp(5px, 0.7vh, 12px); }
+          .scan__card { padding: 5px 10px 10px; transform: translateY(14px); }
+          .scan__slot { margin-top: clamp(4px, 0.7vh, 14px); padding: clamp(5px, 0.8vh, 14px) 6px 0; }
+          .scan__card { padding: 6px 11px 12px; }
+          .scan__reason { margin-top: clamp(6px, 0.9vh, 14px); padding: clamp(7px, 1vh, 12px) 14px; }
+          .scan__consequence { margin-top: clamp(6px, 0.8vh, 12px); }
+          .scan__name { margin-top: clamp(6px, 0.8vh, 13px); }
+          .scan__legend-title { font-size: clamp(20px, 2vw, 26px); }
+        }
+
+        /* 768-tall laptops are the tightest common case. */
+        @media (max-height: 810px) and (min-width: 760px) {
+          .scan__read { padding: 8px 18px 8px; }
+          .scan__slot { margin-top: 3px; padding: 4px 6px 0; }
+          .scan__card { padding: 4px 10px 10px; }
+          .scan__detail { line-height: 1.45; }
+          .scan__reason { margin-top: 6px; padding: 6px 12px; }
         }
 
         @media (max-width: 620px) {

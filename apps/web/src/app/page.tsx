@@ -190,8 +190,7 @@ export default async function LandingPage() {
             Identity, access control and custody of controlled equipment, held
             as one record on a private permissioned chain — where the transfer
             itself reverts if the receiver&rsquo;s credential is missing,
-            expired or revoked. Not a greyed-out button. A revert inside the
-            contract that every transfer is forced through.
+            expired or revoked.
           </p>
 
           <div className="landing__actions">
@@ -397,7 +396,7 @@ export default async function LandingPage() {
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          padding: 26px 0;
+          padding: clamp(12px, 1.9vh, 26px) 0;
         }
         .landing__mark {
           display: flex;
@@ -440,7 +439,10 @@ export default async function LandingPage() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          padding: clamp(30px, 6vw, 76px) 0 clamp(34px, 5vw, 56px);
+          /* Height-aware, not width-aware. Sized only in vw, the hero ignored
+             how tall the screen actually is and pushed the reader off the
+             fold on any laptop. */
+          padding: clamp(8px, 1.7vh, 60px) 0 clamp(10px, 1.5vh, 40px);
         }
 
         /* The block puts an uppercase tracked "NEW" pill here. That exact
@@ -476,18 +478,20 @@ export default async function LandingPage() {
            the four ragged lines a narrow column forced. Held at 82px: the
            impeccable ceiling is 96px, and above that a page is shouting. */
         .landing__headline {
-          margin: 26px 0 0;
+          margin: clamp(10px, 1.7vh, 26px) 0 0;
           max-width: 19ch;
-          font-size: clamp(38px, 6.4vw, 82px);
-          line-height: 1.04;
+          /* min() so the smaller of the two constraints wins: a wide but short
+             laptop screen gets the size its height can afford. */
+          font-size: clamp(34px, min(6vw, 5.2vh), 74px);
+          line-height: 1.05;
           letter-spacing: -0.03em;
           text-wrap: balance;
         }
 
         .landing__deck {
-          margin: 24px 0 0;
+          margin: clamp(10px, 1.6vh, 24px) 0 0;
           max-width: 58ch;
-          font-size: clamp(17px, 1.5vw, 20px);
+          font-size: clamp(16px, min(1.45vw, 2vh), 20px);
           line-height: 1.5;
           text-wrap: pretty;
           color: var(--mkt-muted);
@@ -498,7 +502,7 @@ export default async function LandingPage() {
           flex-wrap: wrap;
           justify-content: center;
           gap: 12px;
-          margin-top: 32px;
+          margin-top: clamp(14px, 2.1vh, 32px);
         }
 
         /* No separators. Four facts fit one line on a wide viewport and wrap to
@@ -508,8 +512,8 @@ export default async function LandingPage() {
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-          gap: 10px clamp(20px, 3vw, 40px);
-          margin: 34px 0 0;
+          gap: 8px clamp(20px, 3vw, 40px);
+          margin: clamp(12px, 1.9vh, 34px) 0 0;
           padding: 0;
           list-style: none;
           font-size: 13.5px;
@@ -520,8 +524,25 @@ export default async function LandingPage() {
            to from the hero link. */
         #mechanism { scroll-margin-top: 16px; }
 
+        /* On a short screen the stacked composition cannot hold its full
+           rhythm and still put the reader on one screen. Rather than shrink
+           everything everywhere, the generous values stay for tall displays and
+           only cramped ones tighten — type stays legible, spacing gives way. */
+        @media (max-height: 950px) and (min-width: 760px) {
+          .landing__bar { padding: clamp(8px, 1.3vh, 26px) 0; }
+          .landing__badge { padding: 4px 14px 4px 5px; font-size: 13px; }
+          .landing__headline { font-size: clamp(30px, min(5.6vw, 4.9vh), 74px); }
+          .landing__actions { margin-top: clamp(10px, 1.6vh, 32px); }
+          .landing__cta--lg { padding: 10px 22px; font-size: 16px; }
+          .landing__ghost { padding: 9px 21px; font-size: 16px; }
+          .landing__spec {
+            margin-top: clamp(9px, 1.4vh, 34px);
+            padding-top: clamp(9px, 1.3vh, 18px);
+          }
+        }
+
         /* --------------------------------------------------------- the stage */
-        .landing__stage { margin-top: clamp(8px, 2vw, 20px); }
+        .landing__stage { margin-top: clamp(4px, 1.2vh, 20px); }
 
         /* -------------------------------------------------------- content */
         .landing__two-col { display: grid; gap: 20px; }
