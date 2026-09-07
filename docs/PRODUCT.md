@@ -27,8 +27,13 @@ do, and what they hold custody of.
 
 ## The one idea the page must land
 
-> The token itself refuses to move unless the receiver holds a valid role
+> The asset itself refuses to move unless the receiver holds a valid role
 > credential.
+
+Set as *asset*, not *token*, on the page itself. It is the same claim — the
+asset is the ERC-721 token — but "token" is the vocabulary this file's own
+anti-references warn costs credibility with a procurement reader, and
+"asset" is the word BEL already uses for the thing being controlled.
 
 Identity platforms stop at issuing a credential. Token standards stop at the
 transfer. This makes the transfer *conditional on* the credential — and the

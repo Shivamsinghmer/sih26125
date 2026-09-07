@@ -20,7 +20,7 @@ test("the landing page is public", async ({ page }) => {
   // The hero states the mechanism; the committed pitch sentence closes the page.
   await expect(
     page.getByRole("heading", {
-      name: /The token refuses to move without a valid credential/i,
+      name: /The asset refuses to move without a valid credential/i,
     }),
   ).toBeVisible();
   await expect(

@@ -67,16 +67,19 @@ export default async function LandingPage() {
       <main>
         {/* The hero is the demonstration; the headline introduces it. */}
         <section className="landing__hero">
-          <div>
+          <div className="landing__lede">
             <h1 className="display-serif landing__headline">
-              The token refuses to move without a valid credential.
+              The asset refuses to move without a valid credential.
             </h1>
+            <p className="landing__deck">
+              Not a greyed-out button. A revert inside the contract that every
+              transfer is forced through.
+            </p>
             <p className="landing__standfirst">
-              A large organisation cannot prove three things at once — who a person
-              is, what they may do, and what they hold custody of — nor prove the
-              record was not quietly edited by the administrator who keeps it.
-              This makes all three a single record on a private permissioned
-              chain that no one department controls.
+              Who a person is, what they may do, and what they hold custody of are
+              normally three systems that can disagree — kept by an administrator
+              who can quietly edit all three. This makes them one record on a
+              private permissioned chain that no single department controls.
             </p>
             <div className="landing__actions">
               <Link href="/login" className="landing__cta landing__cta--lg">
@@ -86,9 +89,18 @@ export default async function LandingPage() {
                 How the refusal works
               </a>
             </div>
+
+            {/* A colophon, not a stats grid: four facts a procurement reader
+                checks for, set at reading size and stated flatly. */}
+            <ul className="landing__spec">
+              <li>Hyperledger Besu · QBFT</li>
+              <li>W3C Verifiable Credentials</li>
+              <li>No personal data on chain</li>
+              <li>Verifies offline</li>
+            </ul>
           </div>
 
-          <div>
+          <div className="landing__demo">
             <GateDemonstration />
           </div>
         </section>
@@ -232,26 +244,46 @@ export default async function LandingPage() {
         /* ----------------------------------------------------------- hero */
         .landing__hero {
           display: grid;
-          gap: clamp(36px, 5vw, 64px);
-          padding: clamp(24px, 4vw, 48px) 0 0;
-          align-items: center;
+          gap: clamp(36px, 5vw, 60px);
+          padding: clamp(24px, 4vw, 44px) 0 0;
+          align-items: start;
         }
+        /* Both columns are allowed to shrink below their content width; the
+           default (auto) lets a wide child set a floor for the whole row. */
+        .landing__hero > * { min-width: 0; }
         @media (min-width: 900px) {
-          .landing__hero { grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); }
+          .landing__hero { grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr); }
         }
 
+        /* The ceiling is 54px rather than 66px on purpose. At 66px this
+           sentence broke into four short ragged lines inside the hero column,
+           which reads as a poster; at 54px it sets in three even ones and the
+           whole hero fits above the fold on a laptop. */
         .landing__headline {
           margin: 0;
-          font-size: clamp(38px, 5.4vw, 66px);
-          line-height: 1.08;
-          letter-spacing: -0.028em;
+          max-width: 17ch;
+          font-size: clamp(36px, 4.4vw, 54px);
+          line-height: 1.1;
+          letter-spacing: -0.026em;
           text-wrap: balance;
         }
+
+        /* The mechanism, at the second-largest size on the page. It used to be
+           buried in the middle of the standfirst, which is the one claim a
+           sceptical reader is actually looking for. */
+        .landing__deck {
+          margin: 22px 0 0;
+          max-width: 46ch;
+          font-size: 20px;
+          line-height: 1.42;
+          text-wrap: pretty;
+          color: var(--mkt-ink);
+        }
         .landing__standfirst {
-          margin: 26px 0 0;
+          margin: 16px 0 0;
           max-width: 54ch;
-          font-size: 18px;
-          line-height: 1.55;
+          font-size: 16px;
+          line-height: 1.6;
           text-wrap: pretty;
           color: var(--mkt-muted);
         }
@@ -259,7 +291,27 @@ export default async function LandingPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
-          margin-top: 32px;
+          margin-top: 30px;
+        }
+
+        /* Set as a grid rather than a dot-separated row. Four facts do not fit
+           on one line in this column, and a wrapped separated list puts a
+           leading separator at the start of the second line — which looks like
+           a typo. A grid needs no separators at all. */
+        .landing__spec {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 9px 24px;
+          margin: 30px 0 0;
+          padding: 18px 0 0;
+          border-top: 1px solid var(--mkt-rule);
+          list-style: none;
+          font-size: 13.5px;
+          line-height: 1.35;
+          color: var(--mkt-faint);
+        }
+        @media (max-width: 420px) {
+          .landing__spec { grid-template-columns: 1fr; }
         }
 
         /* -------------------------------------------------------- content */
