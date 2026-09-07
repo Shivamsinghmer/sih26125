@@ -460,6 +460,7 @@ This trips people up. There are two separate access-control layers:
 - `docs/DESIGN.md` — full style guide, component specs, do's and don'ts, plus the SIH-specific mapping and the deliberate error-state deviation
 - `docs/design-tokens.json` — W3C design tokens
 - `docs/theme.css` — Tailwind v4 `@theme` block and `:root` variables, ready to copy into `apps/web/src/app/globals.css`
+- `docs/PRODUCTION.md` — what is real vs scaffolding, and exactly what changes for a deployment. **Read this before claiming anything is production-ready.**
 
 Signifier and Sohne are commercial fonts; substitute **Source Serif 4** and **Inter** (variable, so the 430/450/480 half-steps survive) unless licences are available.
 
