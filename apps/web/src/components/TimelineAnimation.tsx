@@ -107,20 +107,29 @@ export function TimelineItem({
   );
 }
 
-/** Shared entrance styling, injected once by the section that owns a timeline. */
+/**
+ * Shared entrance styling, injected once by the section that owns a timeline.
+ *
+ * The entrance is transform-only on purpose. An earlier version faded from
+ * opacity 0, which meant every path where the reveal was late or never arrived
+ * — a silent IntersectionObserver, a throttled timer in a background tab, the
+ * gap between hydration and the observer firing — showed the reader an empty
+ * section. Motion is not worth that. Text is legible in every frame now; only
+ * its position is animated.
+ */
 export function TimelineStyles() {
   return (
     <style>{`
       [data-timeline] {
-        transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
-                    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+        transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
       }
-      [data-timeline="out"] { opacity: 0; transform: translateY(14px); }
+      [data-timeline="out"] { transform: translateY(16px); }
       [data-timeline="in"],
-      [data-timeline="static"] { opacity: 1; transform: none; }
+      [data-timeline="static"] { transform: none; }
 
       @media (prefers-reduced-motion: reduce) {
-        [data-timeline] { transition: none; opacity: 1; transform: none; }
+        [data-timeline] { transition: none; transform: none; }
       }
     `}</style>
   );
