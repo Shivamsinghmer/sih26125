@@ -12,15 +12,14 @@ export const dynamic = "force-dynamic";
  *
  * Its whole job is one sentence — the token refuses to move without a valid
  * credential — and the fastest way to land it is to show a transfer failing
- * rather than to describe one. Everything below the fold is evidence for that
- * claim, in descending order of how much a sceptical evaluator needs it.
+ * rather than describe one. Everything below is evidence, in descending order
+ * of how much a sceptical evaluator needs it.
  *
- * Deliberately absent: an uppercase kicker above every section, 01/02/03
- * markers used as scaffolding, and a grid of identical cards. Those read as
- * template regardless of how good the copy is.
+ * Every section uses the shared `.mkt-*` system in globals.css, so heading
+ * size, measure and vertical rhythm are identical by construction. The previous
+ * version repeated those values per section and they drifted apart.
  */
 
-/** The five things BEL asked for, in the order the live demo hits them. */
 const DEMO_STEPS = [
   {
     step: "Issue",
@@ -54,7 +53,7 @@ export default async function LandingPage() {
   const session = await getSession();
 
   return (
-    <div className="landing">
+    <div className="mkt landing">
       <header className="landing__bar">
         <p className="landing__mark">
           <span>BEL Asset Custody</span>
@@ -66,10 +65,9 @@ export default async function LandingPage() {
       </header>
 
       <main>
-        {/* The hero is the demonstration. The headline introduces it; it does
-            not carry the fold alone. */}
+        {/* The hero is the demonstration; the headline introduces it. */}
         <section className="landing__hero">
-          <div className="landing__hero-copy">
+          <div>
             <h1 className="display-serif landing__headline">
               The token refuses to move without a valid credential.
             </h1>
@@ -90,26 +88,25 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="landing__hero-demo">
+          <div>
             <GateDemonstration />
           </div>
         </section>
 
-        {/* The claim, stated once, where it can be checked. */}
-        <section id="mechanism" className="landing__mechanism">
-          <h2 className="display-serif landing__h2">
+        <section id="mechanism" className="mkt-section">
+          <h2 className="mkt-title">
             Identity platforms stop at the credential. Token standards stop at the
             transfer.
           </h2>
-          <div className="landing__mechanism-body">
-            <p className="landing__prose">
+          <div className="mkt-content landing__two-col">
+            <p className="mkt-body">
               This joins them. Every movement of an asset calls into the role
               registry and reverts if the receiver&rsquo;s credential is missing,
               expired or revoked — a check that lives in{" "}
               <code>AssetToken._update</code>, the hook every ERC-721 transfer is
               forced through.
             </p>
-            <p className="landing__prose landing__prose--muted">
+            <p className="mkt-body mkt-body--muted">
               Because it sits there rather than in an interface, it holds for this
               console, for a script, and for any client anyone writes later. That
               is the difference between a permission and a rule.
@@ -117,11 +114,10 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* The five deliverables, as the demo sequence they genuinely are —
-            the order carries information, so the numbering earns its place. */}
-        <section className="landing__steps">
-          <h2 className="display-serif landing__h2">Five minutes, in five moves</h2>
-          <ol className="landing__step-list">
+        {/* A genuine sequence, so the numbering carries information. */}
+        <section className="mkt-section">
+          <h2 className="mkt-title">Five minutes, in five moves</h2>
+          <ol className="mkt-content landing__steps">
             {DEMO_STEPS.map((item, index) => (
               <li
                 key={item.step}
@@ -142,15 +138,12 @@ export default async function LandingPage() {
 
         <FeatureShowcase />
 
-        {/* Two surfaces, deliberately unequal — the console is most of the
-            system, the gate is one question asked well. */}
-        <section className="landing__surfaces">
-          <h2 className="display-serif landing__h2">Two jobs that share nothing</h2>
-
-          <div className="landing__surface-grid">
-            <article className="landing__surface">
+        <section className="mkt-section">
+          <h2 className="mkt-title">Two jobs that share nothing</h2>
+          <div className="mkt-content landing__surface-grid">
+            <article>
               <h3 className="landing__surface-title">The issuing authority</h3>
-              <p className="landing__prose">
+              <p className="mkt-body">
                 IT Security and Internal Audit onboard people, issue and revoke
                 credentials, register assets and replay the entire history. Their
                 console role is read from the chain, so revoking someone&rsquo;s
@@ -159,9 +152,9 @@ export default async function LandingPage() {
               </p>
             </article>
 
-            <article className="landing__surface landing__surface--narrow">
+            <article>
               <h3 className="landing__surface-title">The gate</h3>
-              <p className="landing__prose">
+              <p className="mkt-body">
                 A guard scans the DID on a printed card and gets one answer: is
                 this credential valid right now. Read-only, and provisioned as a
                 device rather than a person — a gate post is staffed by whoever is
@@ -176,8 +169,7 @@ export default async function LandingPage() {
             without a valid credential, because that check is not in the session.
           </p>
         </section>
-        {/* The project's committed pitch sentence, given the last word. The
-            hero states the mechanism; this states what it amounts to. */}
+
         <section className="landing__close">
           <p className="display-serif landing__close-line">
             Ownership, permission and history become one cryptographic object
@@ -187,32 +179,13 @@ export default async function LandingPage() {
       </main>
 
       <footer className="landing__foot">
-        <p>
-          Smart India Hackathon 2026 · Problem statement SIH26125
-        </p>
+        <p>Smart India Hackathon 2026 · Problem statement SIH26125</p>
         <p className="landing__foot-org">
           Bharat Electronics Limited · Ministry of Defence
         </p>
       </footer>
 
       <style>{`
-        .landing {
-          --gutter: clamp(20px, 5vw, 64px);
-
-          /*
-           * Steep's slate/ash/smoke are defined for links, tertiary labels and
-           * placeholders. At 14-18px on white they measure 4.23:1, 2.92:1 and
-           * 2.43:1 — below the 4.5:1 that running text needs. These are the
-           * same cool-gray family stepped dark enough to pass, used only where
-           * text is actually read rather than skimmed.
-           */
-          --read-muted: #616675;   /* 5.73:1 — standfirst, prose, step bodies */
-          --read-faint: #6f7482;   /* 4.67:1 — metadata, footer, step index */
-          max-width: 1180px;
-          margin: 0 auto;
-          padding: 0 var(--gutter) 96px;
-        }
-
         /* ------------------------------------------------------------ bar */
         .landing__bar {
           display: flex;
@@ -228,16 +201,15 @@ export default async function LandingPage() {
           gap: 10px;
           margin: 0;
           font-size: 15px;
-          color: var(--color-ink-black, #17191c);
         }
-        .landing__mark-sub { color: var(--read-faint); }
+        .landing__mark-sub { color: var(--mkt-faint); }
 
         .landing__cta {
           display: inline-flex;
           align-items: center;
           border-radius: 999px;
-          background: var(--color-ink-black, #17191c);
-          color: var(--color-paper-white, #fff);
+          background: var(--mkt-ink);
+          color: #fff;
           padding: 10px 20px;
           font-size: 15px;
           transition: opacity 160ms ease-out;
@@ -249,19 +221,19 @@ export default async function LandingPage() {
           display: inline-flex;
           align-items: center;
           border-radius: 999px;
-          border: 1px solid var(--color-ink-black, #17191c);
+          border: 1px solid var(--mkt-ink);
           padding: 12px 25px;
           font-size: 17px;
-          color: var(--color-ink-black, #17191c);
+          color: var(--mkt-ink);
           transition: background-color 160ms ease-out;
         }
-        .landing__ghost:hover { background: var(--color-mist-gray, #f2f2f3); }
+        .landing__ghost:hover { background: #f2f2f3; }
 
         /* ----------------------------------------------------------- hero */
         .landing__hero {
           display: grid;
           gap: clamp(36px, 5vw, 64px);
-          padding: clamp(28px, 5vw, 56px) 0 clamp(56px, 8vw, 104px);
+          padding: clamp(24px, 4vw, 48px) 0 0;
           align-items: center;
         }
         @media (min-width: 900px) {
@@ -270,11 +242,10 @@ export default async function LandingPage() {
 
         .landing__headline {
           margin: 0;
-          font-size: clamp(38px, 5.4vw, 68px);
+          font-size: clamp(38px, 5.4vw, 66px);
           line-height: 1.08;
           letter-spacing: -0.028em;
           text-wrap: balance;
-          color: var(--color-ink-black, #17191c);
         }
         .landing__standfirst {
           margin: 26px 0 0;
@@ -282,7 +253,7 @@ export default async function LandingPage() {
           font-size: 18px;
           line-height: 1.55;
           text-wrap: pretty;
-          color: var(--read-muted);
+          color: var(--mkt-muted);
         }
         .landing__actions {
           display: flex;
@@ -291,68 +262,26 @@ export default async function LandingPage() {
           margin-top: 32px;
         }
 
-        /* ------------------------------------------------------ mechanism */
-        .landing__mechanism,
-        .landing__steps,
-        .landing__surfaces {
-          padding-top: clamp(56px, 8vw, 104px);
-          border-top: 1px solid var(--color-mist-gray, #f2f2f3);
-        }
-
-        .landing__h2 {
-          margin: 0;
-          max-width: 24ch;
-          font-size: clamp(27px, 3.2vw, 42px);
-          line-height: 1.2;
-          letter-spacing: -0.02em;
-          text-wrap: balance;
-          color: var(--color-ink-black, #17191c);
-        }
-
-        .landing__mechanism-body {
-          display: grid;
-          gap: 20px;
-          margin-top: 28px;
-        }
+        /* -------------------------------------------------------- content */
+        .landing__two-col { display: grid; gap: 20px; }
         @media (min-width: 860px) {
-          .landing__mechanism-body { grid-template-columns: 1fr 1fr; gap: 40px; }
+          .landing__two-col { grid-template-columns: 1fr 1fr; gap: 40px; }
         }
 
-        .landing__prose {
-          margin: 0;
-          max-width: 62ch;
-          font-size: 17px;
-          line-height: 1.6;
-          text-wrap: pretty;
-          color: var(--color-ink-black, #17191c);
-        }
-        .landing__prose--muted { color: var(--read-muted); }
-        .landing__prose code,
-        .landing__step-body code {
-          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          font-size: 0.88em;
-        }
-
-        /* ---------------------------------------------------------- steps */
-        .landing__step-list {
-          list-style: none;
-          margin: 40px 0 0;
-          padding: 0;
-        }
+        .landing__steps { list-style: none; padding: 0; }
         .landing__step {
           display: grid;
           gap: 8px 28px;
           padding: 26px 0;
-          border-top: 1px solid var(--color-mist-gray, #f2f2f3);
+          border-top: 1px solid var(--mkt-rule);
         }
         .landing__step:first-child { border-top: 0; padding-top: 0; }
         @media (min-width: 760px) {
           .landing__step { grid-template-columns: 168px minmax(0, 1fr); }
         }
 
-        /* The refusal is the argument; it gets the accent and nothing else does. */
         .landing__step--emphasis {
-          background: var(--surface-accent-blush, #fbe1d1);
+          background: #fbe1d1;
           border-radius: 20px;
           border-top-color: transparent;
           padding: 28px clamp(20px, 3vw, 30px);
@@ -360,8 +289,9 @@ export default async function LandingPage() {
         }
         .landing__step--emphasis + .landing__step { border-top-color: transparent; }
         .landing__step--emphasis .landing__step-index,
-        .landing__step--emphasis .landing__step-title { color: var(--color-sienna-brown, #5d2a1a); }
-        .landing__step--emphasis .landing__step-body { color: var(--color-sienna-brown, #5d2a1a); opacity: 0.86; }
+        .landing__step--emphasis .landing__step-name,
+        .landing__step--emphasis .landing__step-title { color: #5d2a1a; }
+        .landing__step--emphasis .landing__step-body { color: #5d2a1a; opacity: 0.86; }
 
         .landing__step-index {
           display: flex;
@@ -369,63 +299,49 @@ export default async function LandingPage() {
           gap: 12px;
           margin: 0;
           font-size: 14px;
-          color: var(--read-faint);
+          color: var(--mkt-faint);
         }
-        .landing__step-name { color: var(--color-ink-black, #17191c); }
-        .landing__step--emphasis .landing__step-name { color: var(--color-sienna-brown, #5d2a1a); }
+        .landing__step-name { color: var(--mkt-ink); }
 
-        .landing__step-title {
-          margin: 0;
-          font-size: 21px;
-          line-height: 1.3;
-          color: var(--color-ink-black, #17191c);
-        }
+        .landing__step-title { margin: 0; font-size: 21px; line-height: 1.3; }
         .landing__step-body {
           margin: 8px 0 0;
           max-width: 64ch;
           font-size: 16px;
           line-height: 1.6;
           text-wrap: pretty;
-          color: var(--read-muted);
+          color: var(--mkt-muted);
         }
 
-        /* ------------------------------------------------------- surfaces */
-        .landing__surface-grid {
-          display: grid;
-          gap: 28px;
-          margin-top: 36px;
-        }
+        .landing__surface-grid { display: grid; gap: 28px; }
         @media (min-width: 860px) {
           .landing__surface-grid { grid-template-columns: 1.35fr 1fr; gap: 56px; }
         }
-        .landing__surface-title {
-          margin: 0 0 10px;
-          font-size: 21px;
-          color: var(--color-ink-black, #17191c);
-        }
+        .landing__surface-title { margin: 0 0 10px; font-size: 21px; }
+
         .landing__note {
           margin: 36px 0 0;
           max-width: 70ch;
           font-size: 15px;
           line-height: 1.6;
-          color: var(--read-muted);
+          color: var(--mkt-muted);
         }
 
         /* ---------------------------------------------------------- close */
         .landing__close {
-          margin-top: clamp(56px, 8vw, 104px);
+          margin-top: var(--mkt-rhythm);
           padding: clamp(40px, 6vw, 72px) clamp(24px, 4vw, 56px);
           border-radius: 24px;
-          background: var(--color-ink-black, #17191c);
+          background: var(--mkt-ink);
         }
         .landing__close-line {
           margin: 0;
           max-width: 22ch;
           font-size: clamp(26px, 3.4vw, 44px);
           line-height: 1.22;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.022em;
           text-wrap: balance;
-          color: var(--color-paper-white, #fff);
+          color: #fff;
         }
 
         /* ----------------------------------------------------------- foot */
@@ -434,14 +350,14 @@ export default async function LandingPage() {
           flex-wrap: wrap;
           justify-content: space-between;
           gap: 8px;
-          margin-top: clamp(56px, 8vw, 96px);
+          margin-top: var(--mkt-rhythm);
           padding-top: 24px;
-          border-top: 1px solid var(--color-mist-gray, #f2f2f3);
+          border-top: 1px solid var(--mkt-rule);
           font-size: 14px;
-          color: var(--read-faint);
+          color: var(--mkt-faint);
         }
         .landing__foot p { margin: 0; }
-        .landing__foot-org { color: var(--read-muted); }
+        .landing__foot-org { color: var(--mkt-muted); }
       `}</style>
     </div>
   );

@@ -48,25 +48,23 @@ export function FeatureShowcase() {
   const timeline = useTimeline(sectionRef);
 
   return (
-    <section ref={sectionRef} className="showcase">
+    <section ref={sectionRef} className="mkt-section showcase">
       <TimelineStyles />
 
       {/* Signature treatments, behind content and pointer-transparent. */}
       <div className="showcase__bg" aria-hidden="true">
         <div className="showcase__grid" />
-        <div className="showcase__wash" />
         <div className="showcase__fade-top" />
-        <div className="showcase__fade-bottom" />
       </div>
 
       <div className="showcase__inner">
         <header className="showcase__head">
           <TimelineItem order={0} timeline={timeline}>
-            <h2 className="display-serif showcase__title">
+            <h2 className="mkt-title">
               Four surfaces, one record underneath.
             </h2>
           </TimelineItem>
-          <TimelineItem order={1} timeline={timeline} as="p" className="showcase__sub">
+          <TimelineItem order={1} timeline={timeline} as="p" className="mkt-lede">
             An issuing authority, a gate post, an auditor and a printed card. Each
             sees exactly what its job needs, and none of them can disagree about
             what is true — because none of them keeps its own copy.
@@ -138,23 +136,24 @@ export function FeatureShowcase() {
 
       <style>{`
         .showcase {
-          position: relative;
           isolation: isolate;
-          margin-top: clamp(96px, 12vw, 144px);
-          padding: clamp(64px, 8vw, 112px) 0 clamp(56px, 7vw, 96px);
         }
 
-        /* ---- feature1 signature treatments, behind everything ---- */
+        /* ---- feature1 signature treatments, behind everything ----
+           The ruled grid and its radial mask are kept: they read as a technical
+           drawing surface, which suits the subject. The block's indigo wash is
+           not — its saturated stop sits at the gradient's outer edge, so it
+           pooled into a purple band across the bottom of the section. A hue
+           that appears nowhere else in the system, arriving as a band, reads as
+           a rendering fault rather than an accent. */
         .showcase__bg {
           position: absolute;
           inset: 0;
           z-index: -1;
           pointer-events: none;
           overflow: hidden;
-          border-radius: 28px;
         }
 
-        /* Ruled grid under a radial ellipse mask. */
         .showcase__grid {
           position: absolute;
           inset: 0;
@@ -166,26 +165,12 @@ export function FeatureShowcase() {
           mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 70%, transparent 110%);
         }
 
-        /* The accent wash. Held at low opacity so the mockups stay the focal
-           point and body text keeps its contrast. */
-        .showcase__wash {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(125% 125% at 50% 10%, #ffffff00 40%, #6366f1 100%);
-          opacity: 0.14;
-        }
-
+        /* Softens the grid where it meets the section rule above. */
         .showcase__fade-top {
           position: absolute;
           inset: 0 0 auto 0;
-          height: 128px;
+          height: 96px;
           background: linear-gradient(to bottom, #fff, #fff, transparent);
-        }
-        .showcase__fade-bottom {
-          position: absolute;
-          inset: auto 0 0 0;
-          height: 160px;
-          background: linear-gradient(to top, #fff, #fff, transparent);
         }
 
         /* ---- composition ---- */
@@ -195,31 +180,13 @@ export function FeatureShowcase() {
           margin: 0 auto;
         }
 
-        .showcase__head { max-width: 34ch; }
-        .showcase__title {
-          margin: 0;
-          font-size: clamp(28px, 3.4vw, 46px);
-          line-height: 1.16;
-          letter-spacing: -0.022em;
-          text-wrap: balance;
-          color: #17191c;
-        }
-        .showcase__sub {
-          margin: 20px 0 0;
-          max-width: 58ch;
-          font-size: 17px;
-          line-height: 1.6;
-          text-wrap: pretty;
-          color: #616675;
-        }
-
         /* 8px rhythm: 24-32 inside groups, 48-72 between groups. */
         .showcase__lead-row,
         .showcase__pair,
         .showcase__split {
           display: grid;
-          gap: 32px;
-          margin-top: 64px;
+          gap: clamp(28px, 3.5vw, 44px);
+          margin-top: clamp(36px, 4.5vw, 60px);
           align-items: start;
         }
         @media (min-width: 940px) {

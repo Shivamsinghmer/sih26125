@@ -104,3 +104,77 @@ body {
   font-size: 13px;
   letter-spacing: -0.01em;
 }
+
+/* ---------------------------------------------------------------------------
+ * Marketing surfaces (the landing page).
+ *
+ * One section system, defined once. Every section on the page consumes these,
+ * so heading size, measure, alignment and vertical rhythm are identical by
+ * construction rather than by remembering to repeat them — which is how they
+ * drifted apart in the first place.
+ * ------------------------------------------------------------------------- */
+
+.mkt {
+  --mkt-gutter: clamp(20px, 5vw, 64px);
+  --mkt-rhythm: clamp(64px, 9vw, 116px);
+
+  /* Steep's slate/ash/smoke are specified for links and tertiary labels; at
+     body sizes they measure 4.23:1 and below on white. These are the same
+     cool-gray family, dark enough for text that is actually read. */
+  --mkt-ink: #17191c;
+  --mkt-muted: #616675;  /* 5.73:1 */
+  --mkt-faint: #6f7482;  /* 4.67:1 */
+  --mkt-rule: #e7e7ea;
+
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--mkt-gutter) 96px;
+  color: var(--mkt-ink);
+}
+
+/* Every section: same top rhythm, same rule, same left edge. */
+.mkt-section {
+  position: relative;
+  padding-top: var(--mkt-rhythm);
+  margin-top: var(--mkt-rhythm);
+  border-top: 1px solid var(--mkt-rule);
+}
+.mkt-section--flush {
+  border-top: 0;
+  margin-top: 0;
+}
+
+/* One heading treatment. Nothing else may set an h2 size on this page. */
+.mkt-title {
+  margin: 0;
+  max-width: 26ch;
+  font-family: var(--font-signifier);
+  font-weight: 400;
+  font-size: clamp(28px, 3.3vw, 44px);
+  line-height: 1.18;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+  color: var(--mkt-ink);
+}
+
+.mkt-lede {
+  margin: 18px 0 0;
+  max-width: 58ch;
+  font-size: 17px;
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: var(--mkt-muted);
+}
+
+.mkt-body {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 17px;
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: var(--mkt-ink);
+}
+.mkt-body--muted { color: var(--mkt-muted); }
+
+/* Consistent gap between a section's heading block and its content. */
+.mkt-content { margin-top: clamp(32px, 4vw, 52px); }
