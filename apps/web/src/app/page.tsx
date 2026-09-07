@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { FeatureShowcase } from "@/components/FeatureShowcase";
-import { GateDemonstration } from "@/components/GateDemonstration";
+import { GateScanner } from "@/components/GateScanner";
 import { getSession } from "@/lib/auth-actions";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/auth-types";
 
@@ -65,44 +65,49 @@ export default async function LandingPage() {
       </header>
 
       <main>
-        {/* The hero is the demonstration; the headline introduces it. */}
+        {/* Composition follows the hero-financial block: a badge, a large
+            centred headline, one subhead, paired actions, then the product
+            itself in a frame beneath. Its blue-gradient fintech skin — Unsplash
+            backdrop, blurred blobs, glass panel, gradient buttons — is not
+            carried over; docs/PRODUCT.md rules that vocabulary out for this
+            audience, so the structure arrives in Steep instead. */}
         <section className="landing__hero">
-          <div className="landing__lede">
-            <h1 className="display-serif landing__headline">
-              The asset refuses to move without a valid credential.
-            </h1>
-            <p className="landing__deck">
-              Not a greyed-out button. A revert inside the contract that every
-              transfer is forced through.
-            </p>
-            <p className="landing__standfirst">
-              Who a person is, what they may do, and what they hold custody of are
-              normally three systems that can disagree — kept by an administrator
-              who can quietly edit all three. This makes them one record on a
-              private permissioned chain that no single department controls.
-            </p>
-            <div className="landing__actions">
-              <Link href="/login" className="landing__cta landing__cta--lg">
-                {session ? "Switch account" : "Sign in to the console"}
-              </Link>
-              <a href="#mechanism" className="landing__ghost">
-                How the refusal works
-              </a>
-            </div>
+          <p className="landing__badge">
+            <span className="landing__badge-mark">SIH26125</span>
+            Bharat Electronics Limited · Ministry of Defence
+          </p>
 
-            {/* A colophon, not a stats grid: four facts a procurement reader
-                checks for, set at reading size and stated flatly. */}
-            <ul className="landing__spec">
-              <li>Hyperledger Besu · QBFT</li>
-              <li>W3C Verifiable Credentials</li>
-              <li>No personal data on chain</li>
-              <li>Verifies offline</li>
-            </ul>
+          <h1 className="display-serif landing__headline">
+            The asset refuses to move without a valid credential.
+          </h1>
+
+          <p className="landing__deck">
+            Not a greyed-out button — a revert inside the contract that every
+            transfer is forced through. Identity, permission and custody become
+            one record no administrator can quietly edit.
+          </p>
+
+          <div className="landing__actions">
+            <Link href="/login" className="landing__cta landing__cta--lg">
+              {session ? "Switch account" : "Sign in to the console"}
+            </Link>
+            <a href="#mechanism" className="landing__ghost">
+              How the refusal works
+            </a>
           </div>
 
-          <div className="landing__demo">
-            <GateDemonstration />
-          </div>
+          {/* A colophon, not a stats grid: four facts a procurement reader
+              checks for, set at reading size and stated flatly. */}
+          <ul className="landing__spec">
+            <li>Hyperledger Besu · QBFT</li>
+            <li>W3C Verifiable Credentials</li>
+            <li>No personal data on chain</li>
+            <li>Verifies offline</li>
+          </ul>
+        </section>
+
+        <section className="landing__stage" aria-label="The gate reader in use">
+          <GateScanner />
         </section>
 
         <section id="mechanism" className="mkt-section">
@@ -242,77 +247,86 @@ export default async function LandingPage() {
         .landing__ghost:hover { background: #f2f2f3; }
 
         /* ----------------------------------------------------------- hero */
+        /* Centred, single column. The block's own composition. */
         .landing__hero {
-          display: grid;
-          gap: clamp(36px, 5vw, 60px);
-          padding: clamp(24px, 4vw, 44px) 0 0;
-          align-items: start;
-        }
-        /* Both columns are allowed to shrink below their content width; the
-           default (auto) lets a wide child set a floor for the whole row. */
-        .landing__hero > * { min-width: 0; }
-        @media (min-width: 900px) {
-          .landing__hero { grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr); }
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          padding: clamp(30px, 6vw, 76px) 0 clamp(34px, 5vw, 56px);
         }
 
-        /* The ceiling is 54px rather than 66px on purpose. At 66px this
-           sentence broke into four short ragged lines inside the hero column,
-           which reads as a poster; at 54px it sets in three even ones and the
-           whole hero fits above the fold on a laptop. */
-        .landing__headline {
+        /* The block puts an uppercase tracked "NEW" pill here. That exact
+           treatment is on this project's anti-reference list, so the pill keeps
+           its position and loses the shouting: sentence case, no tracking, and
+           it carries the one fact this audience checks first. */
+        .landing__badge {
+          display: inline-flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
           margin: 0;
-          max-width: 17ch;
-          font-size: clamp(36px, 4.4vw, 54px);
-          line-height: 1.1;
-          letter-spacing: -0.026em;
+          padding: 6px 16px 6px 6px;
+          border: 1px solid var(--mkt-rule);
+          border-radius: 999px;
+          font-size: 13.5px;
+          color: var(--mkt-muted);
+        }
+        .landing__badge-mark {
+          padding: 3px 10px;
+          border-radius: 999px;
+          background: var(--mkt-ink);
+          color: #fff;
+          font-size: 12px;
+        }
+
+        /* Centred and full-bleed, so it takes the block's larger scale without
+           the four ragged lines a narrow column forced. Held at 82px: the
+           impeccable ceiling is 96px, and above that a page is shouting. */
+        .landing__headline {
+          margin: 26px 0 0;
+          max-width: 19ch;
+          font-size: clamp(38px, 6.4vw, 82px);
+          line-height: 1.04;
+          letter-spacing: -0.03em;
           text-wrap: balance;
         }
 
-        /* The mechanism, at the second-largest size on the page. It used to be
-           buried in the middle of the standfirst, which is the one claim a
-           sceptical reader is actually looking for. */
         .landing__deck {
-          margin: 22px 0 0;
-          max-width: 46ch;
-          font-size: 20px;
-          line-height: 1.42;
-          text-wrap: pretty;
-          color: var(--mkt-ink);
-        }
-        .landing__standfirst {
-          margin: 16px 0 0;
-          max-width: 54ch;
-          font-size: 16px;
-          line-height: 1.6;
+          margin: 24px 0 0;
+          max-width: 58ch;
+          font-size: clamp(17px, 1.5vw, 20px);
+          line-height: 1.5;
           text-wrap: pretty;
           color: var(--mkt-muted);
         }
+
         .landing__actions {
           display: flex;
           flex-wrap: wrap;
+          justify-content: center;
           gap: 12px;
-          margin-top: 30px;
+          margin-top: 32px;
         }
 
-        /* Set as a grid rather than a dot-separated row. Four facts do not fit
-           on one line in this column, and a wrapped separated list puts a
-           leading separator at the start of the second line — which looks like
-           a typo. A grid needs no separators at all. */
+        /* No separators. Four facts fit one line on a wide viewport and wrap to
+           two on a phone; a dot-separated list puts a leading dot at the start
+           of the wrapped line, which reads as a typo. */
         .landing__spec {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 9px 24px;
-          margin: 30px 0 0;
-          padding: 18px 0 0;
-          border-top: 1px solid var(--mkt-rule);
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 10px clamp(20px, 3vw, 40px);
+          margin: 34px 0 0;
+          padding: 0;
           list-style: none;
           font-size: 13.5px;
-          line-height: 1.35;
           color: var(--mkt-faint);
         }
-        @media (max-width: 420px) {
-          .landing__spec { grid-template-columns: 1fr; }
-        }
+
+        /* --------------------------------------------------------- the stage */
+        .landing__stage { margin-top: clamp(8px, 2vw, 20px); }
 
         /* -------------------------------------------------------- content */
         .landing__two-col { display: grid; gap: 20px; }
