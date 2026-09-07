@@ -53,7 +53,113 @@ export default async function LandingPage() {
   const session = await getSession();
 
   return (
-    <div className="mkt landing">
+    <div className="landing-shell">
+      {/* hero-financial's background, carried over as the block builds it: a
+          pale base, the sky photograph at half opacity, two blurred gradient
+          bars in the top-left corner, and a blue wash over the first 600px.
+          The photograph is vendored into /public rather than hotlinked from
+          Unsplash — this demo is expected to run on a closed network, and a
+          hero that needs a CDN would come up bare there. */}
+      <div className="landing__sky" aria-hidden="true">
+        <div className="landing__sky-photo" />
+
+        <svg
+          className="landing__sky-blobs"
+          width="358"
+          height="483"
+          viewBox="0 0 358 483"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g filter="url(#skyBlurA)">
+            <rect
+              x="-86.9961"
+              y="-33.114"
+              width="72"
+              height="541"
+              rx="36"
+              transform="rotate(-30.8182 -86.9961 -33.114)"
+              fill="url(#skyFillA)"
+            />
+          </g>
+          <g filter="url(#skyBlurB)">
+            <rect
+              x="-17"
+              y="-135.113"
+              width="50.0937"
+              height="541"
+              rx="25.0469"
+              transform="rotate(-30.8182 -17 -135.113)"
+              fill="url(#skyFillB)"
+            />
+          </g>
+          <defs>
+            <filter
+              id="skyBlurA"
+              x="-137.641"
+              y="-120.646"
+              width="440.285"
+              height="602.787"
+              filterUnits="userSpaceOnUse"
+              colorInterpolationFilters="sRGB"
+            >
+              <feFlood floodOpacity="0" result="BackgroundImageFix" />
+              <feBlend
+                mode="normal"
+                in="SourceGraphic"
+                in2="BackgroundImageFix"
+                result="shape"
+              />
+              <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur" />
+            </filter>
+            <filter
+              id="skyBlurB"
+              x="-71.707"
+              y="-215.486"
+              width="429.598"
+              height="599.69"
+              filterUnits="userSpaceOnUse"
+              colorInterpolationFilters="sRGB"
+            >
+              <feFlood floodOpacity="0" result="BackgroundImageFix" />
+              <feBlend
+                mode="normal"
+                in="SourceGraphic"
+                in2="BackgroundImageFix"
+                result="shape"
+              />
+              <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur" />
+            </filter>
+            <linearGradient
+              id="skyFillA"
+              x1="-50.9961"
+              y1="-33.114"
+              x2="-50.9961"
+              y2="507.886"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#91bbfb" />
+              <stop offset="1" stopColor="#E6F1FF" />
+            </linearGradient>
+            <linearGradient
+              id="skyFillB"
+              x1="8.04686"
+              y1="-135.113"
+              x2="8.04686"
+              y2="405.887"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#8dbafd" />
+              <stop offset="1" stopColor="#c1d9f8" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <div className="landing__sky-wash" />
+        <div className="landing__sky-veil" />
+      </div>
+
+      <div className="mkt landing">
       <header className="landing__bar">
         <p className="landing__mark">
           <span>BEL Asset Custody</span>
@@ -65,12 +171,11 @@ export default async function LandingPage() {
       </header>
 
       <main>
-        {/* Composition follows the hero-financial block: a badge, a large
-            centred headline, one subhead, paired actions, then the product
-            itself in a frame beneath. Its blue-gradient fintech skin — Unsplash
-            backdrop, blurred blobs, glass panel, gradient buttons — is not
-            carried over; docs/PRODUCT.md rules that vocabulary out for this
-            audience, so the structure arrives in Steep instead. */}
+        {/* Composition and background both follow the hero-financial block:
+            its sky band above, then a badge, a large centred headline, one
+            subhead, paired actions, and the product seated in a frame beneath.
+            Type and controls stay Steep, so the page still reads as this
+            system wearing the block's sky rather than as a second design. */}
         <section className="landing__hero">
           <p className="landing__badge">
             <span className="landing__badge-mark">SIH26125</span>
@@ -82,9 +187,11 @@ export default async function LandingPage() {
           </h1>
 
           <p className="landing__deck">
-            Not a greyed-out button — a revert inside the contract that every
-            transfer is forced through. Identity, permission and custody become
-            one record no administrator can quietly edit.
+            Identity, access control and custody of controlled equipment, held
+            as one record on a private permissioned chain — where the transfer
+            itself reverts if the receiver&rsquo;s credential is missing,
+            expired or revoked. Not a greyed-out button. A revert inside the
+            contract that every transfer is forced through.
           </p>
 
           <div className="landing__actions">
@@ -102,6 +209,7 @@ export default async function LandingPage() {
             <li>Hyperledger Besu · QBFT</li>
             <li>W3C Verifiable Credentials</li>
             <li>No personal data on chain</li>
+            <li>Tamper-evident audit replay</li>
             <li>Verifies offline</li>
           </ul>
         </section>
@@ -203,7 +311,86 @@ export default async function LandingPage() {
       </footer>
 
       <style>{`
+        /* ------------------------------------------------------------- sky */
+        /* The band is full-viewport-width from inside a 1180px container, so it
+           is pulled out with left:50% + 100vw. overflow-x: clip on the root
+           absorbs the resulting overflow without turning the page into a scroll
+           container the way hidden would. */
+        .landing-shell {
+          position: relative;
+          isolation: isolate;
+        }
+
+        /* Spans the shell, which is already full body width. An earlier version
+           used left:50% + 100vw from inside the 1180px container and clipped it
+           on that same element — which is the container, so the bleed was cut
+           back to 1180px and left white margins at both edges. */
+        .landing__sky {
+          position: absolute;
+          z-index: -1;
+          top: 0;
+          left: 0;
+          right: 0;
+          /* Approximate by design: the band dissolves before it ends, so its
+             exact stopping point never shows. */
+          height: clamp(820px, 108vh, 1320px);
+          overflow: hidden;
+          pointer-events: none;
+          background: #f7f9fc;
+          -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+        }
+
+        .landing__sky-photo {
+          position: absolute;
+          inset: 0;
+          background: url("/hero-sky.jpg") center / cover no-repeat;
+          opacity: 0.85;
+        }
+
+        .landing__sky-blobs { position: absolute; top: 0; left: 0; }
+
+        .landing__sky-wash {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 600px;
+          /* The block's wash is opaque at its top stop, which erased the clouds
+             in exactly the band where they read best. Same hues, carried as
+             alpha so the photograph stays visible through it. */
+          background: linear-gradient(
+            to bottom,
+            rgba(239, 246, 255, 0.82),
+            rgba(219, 234, 254, 0.4),
+            transparent
+          );
+        }
+
+        /* A legibility scrim, not a decoration. Over the strongest part of the
+           photograph, Steep's secondary greys measure 2.7:1 — the sky has to
+           stay a sky at the edges while the centre column stays readable. */
+        .landing__sky-veil {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            ellipse 68% 54% at 50% 40%,
+            rgba(255, 255, 255, 0.9) 0%,
+            rgba(255, 255, 255, 0.72) 46%,
+            rgba(255, 255, 255, 0) 78%
+          );
+        }
+
         /* ------------------------------------------------------------ bar */
+        /* Steep's muted greys are chosen against white. Over the sky they fall
+           to roughly 3.5:1, so within the band the ramp is re-pointed darker —
+           measured against the photograph's darkest pixel, not guessed. */
+        .landing__bar,
+        .landing__hero {
+          --mkt-muted: #414755;
+          --mkt-faint: #424858;
+        }
+
         .landing__bar {
           display: flex;
           flex-wrap: wrap;
@@ -268,8 +455,12 @@ export default async function LandingPage() {
           gap: 10px;
           margin: 0;
           padding: 6px 16px 6px 6px;
-          border: 1px solid var(--mkt-rule);
+          border: 1px solid #fff;
           border-radius: 999px;
+          /* A bare outline vanished against the photograph; the block floats
+             this pill on white, and over a sky it needs to. */
+          background: #fff;
+          box-shadow: 0 2px 10px rgba(23, 25, 28, 0.06);
           font-size: 13.5px;
           color: var(--mkt-muted);
         }
@@ -425,6 +616,7 @@ export default async function LandingPage() {
         .landing__foot p { margin: 0; }
         .landing__foot-org { color: var(--mkt-muted); }
       `}</style>
+      </div>
     </div>
   );
 }

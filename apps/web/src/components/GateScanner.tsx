@@ -37,78 +37,98 @@ import { useEffect, useReducer } from "react";
 
 interface Reading {
   id: string;
-  name: string;
-  post: string;
-  role: string;
+  /** The controlled item. It is the subject of every reading. */
+  asset: string;
+  token: string;
+  requires: string;
+  /** Who presented a card for it — secondary, because the asset is the point. */
+  presenter: string;
+  presenterPost: string;
   /** Exactly one of the contract's InvalidReason members. */
   reason: "Valid" | "NeverGranted" | "Revoked" | "Expired";
   ok: boolean;
-  /** The credential's expiry as the reader would print it. */
-  expiry: string;
   detail: string;
-  consequence: string;
+  /** What happens to custody. The reason the check exists at all. */
+  outcome: string;
 }
 
 /* Ordered so the first paint lands on a refusal — the differentiator — and the
-   pass arrives second, as the contrast that makes the refusal mean something. */
+   release arrives second, as the contrast that makes the refusal mean
+   something. Every entry names the asset first: this platform governs custody
+   of controlled equipment, and the credential is how it does that. A reader
+   that led with the person would describe a badge system instead. */
 const READINGS: Reading[] = [
   {
     id: "revoked",
-    name: "A. Deshpande",
-    post: "Radar Systems · contractor",
-    role: "Manager",
+    asset: "Signal Analyser SN-8823",
+    token: "Token #1",
+    requires: "Manager",
+    presenter: "A. Deshpande",
+    presenterPost: "Radar Systems · contractor",
     reason: "Revoked",
     ok: false,
-    expiry: "issued 4 Apr 2026",
     detail:
       "Withdrawn 2 Sep 2026, 11:04. The card still prints perfectly — the credential behind it does not.",
-    consequence: "Not permitted to carry Signal Analyser SN-8823 out.",
+    outcome: "Asset not released. Custody unchanged.",
   },
   {
     id: "valid",
-    name: "Priya Menon",
-    post: "Divisional Manager, Radar Systems",
-    role: "Manager",
+    asset: "Signal Analyser SN-8823",
+    token: "Token #1",
+    requires: "Manager",
+    presenter: "Priya Menon",
+    presenterPost: "Divisional Manager, Radar Systems",
     reason: "Valid",
     ok: true,
-    expiry: "expires 6 Oct 2026",
-    detail: "Issued 7 Mar 2026. Valid for another 29 days.",
-    consequence: "Cleared to carry Signal Analyser SN-8823.",
+    detail: "Manager credential issued 7 Mar 2026, valid for another 29 days.",
+    outcome: "Asset released. Custody logged on chain.",
   },
   {
     id: "expired",
-    name: "S. Rao",
-    post: "Instrumentation, Bay 4",
-    role: "Manager",
+    asset: "Oscilloscope OS-2140",
+    token: "Token #4",
+    requires: "Manager",
+    presenter: "S. Rao",
+    presenterPost: "Instrumentation, Bay 4",
     reason: "Expired",
     ok: false,
-    expiry: "lapsed 14 Aug 2026",
     detail:
-      "Nothing was revoked. The grant simply ran out, and no one had to remember to remove it.",
-    consequence: "Not permitted to carry Signal Analyser SN-8823 out.",
+      "Nothing was revoked. The grant reached 14 Aug 2026 and lapsed, with no one having to remember to remove it.",
+    outcome: "Asset not released. Custody unchanged.",
   },
   {
     id: "never",
-    name: "Rahul Nair",
-    post: "Technician, Radar Systems",
-    role: "Manager",
+    asset: "Signal Analyser SN-8823",
+    token: "Token #1",
+    requires: "Manager",
+    presenter: "Rahul Nair",
+    presenterPost: "Technician, Radar Systems",
     reason: "NeverGranted",
     ok: false,
-    expiry: "no grant on record",
     detail: "No Manager credential was ever issued to this holder.",
-    consequence: "Not permitted to carry Signal Analyser SN-8823 out.",
+    outcome: "Asset not released. Custody unchanged.",
   },
 ];
 
-/* The complete return set of RoleRegistry.checkRole(), in enum order. Listing
-   all four beside the device is the point the hero has to land: a refusal here
-   is never a bare "denied" — the contract names which of three distinct
-   failures occurred, and they call for different actions from the guard. */
-const REASONS: { reason: Reading["reason"]; gloss: string }[] = [
-  { reason: "Valid", gloss: "The grant exists, is unrevoked, and has not expired." },
-  { reason: "NeverGranted", gloss: "No grant of this role was ever issued to the holder." },
-  { reason: "Revoked", gloss: "The grant was withdrawn before its expiry date." },
-  { reason: "Expired", gloss: "The grant reached its expiry and lapsed on its own." },
+/* The three registries the problem statement names, and the one record they
+   make between them. This is the column that has to say what the platform is:
+   identity, access control and asset custody, joined rather than adjacent. */
+const REGISTRIES = [
+  {
+    facet: "Identity",
+    contract: "IdentityRegistry",
+    body: "A DID and a public key for each person. Names and photographs stay in the operator's own database — never on chain.",
+  },
+  {
+    facet: "Access control",
+    contract: "RoleRegistry",
+    body: "Role grants carrying an expiry and a revocation flag. checkRole() returns one of four answers, and the reader shows which.",
+  },
+  {
+    facet: "Asset custody",
+    contract: "AssetToken",
+    body: "Each controlled item is a token bound to its holder's DID, carrying its own custody history rather than a row in a spreadsheet.",
+  },
 ];
 
 const SCAN_MS = 720;
@@ -169,14 +189,21 @@ export function GateScanner() {
               data-on={i === index}
               data-ok={r.ok}
             >
-              <p className="scan__verdict">{r.ok ? "Cleared" : "Refused"}</p>
+              <p className="scan__verdict">
+                {r.ok ? "Released" : "Refused"}
+              </p>
 
-              <p className="scan__name">{r.name}</p>
-              <p className="scan__post">{r.post}</p>
+              {/* The asset leads. The credential is how custody is decided, not
+                  the thing being demonstrated. */}
+              <p className="scan__name">{r.asset}</p>
+              <p className="scan__post">
+                {r.token} · requires <strong>{r.requires}</strong>
+              </p>
 
               <p className="scan__cred">
-                <span className="scan__role">{r.role}</span>
-                <span className="scan__expiry">{r.expiry}</span>
+                <span className="scan__by-label">presented by</span>
+                <span className="scan__by">{r.presenter}</span>
+                <span className="scan__expiry">{r.presenterPost}</span>
               </p>
 
               {/* The reason, in the contract's own words. */}
@@ -187,7 +214,7 @@ export function GateScanner() {
                 <p className="scan__detail">{r.detail}</p>
               </div>
 
-              <p className="scan__consequence">{r.consequence}</p>
+              <p className="scan__consequence">{r.outcome}</p>
             </div>
           ))}
 
@@ -214,25 +241,25 @@ export function GateScanner() {
       </div>
 
       <figcaption className="scan__legend">
-        <p className="scan__legend-title">Four answers, and only four.</p>
+        <p className="scan__legend-title">
+          One record, three registries.
+        </p>
         <ul className="scan__reasons">
-          {REASONS.map((r) => (
-            <li
-              key={r.reason}
-              className="scan__reason-row"
-              data-active={r.reason === current.reason && !reading}
-              data-ok={r.reason === "Valid"}
-            >
-              <code className="scan__reason-name">{r.reason}</code>
-              <span className="scan__reason-gloss">{r.gloss}</span>
+          {REGISTRIES.map((r) => (
+            <li key={r.facet} className="scan__reason-row">
+              <span className="scan__facet">
+                {r.facet}
+                <code className="scan__contract">{r.contract}</code>
+              </span>
+              <span className="scan__reason-gloss">{r.body}</span>
             </li>
           ))}
         </ul>
         <p className="scan__note">
-          The card carries a DID, not a permission. The reader resolves it
-          against the registry on every scan, so a credential withdrawn a minute
-          ago is refused a minute later — with no card to collect and nothing to
-          reissue.
+          Every issue, revocation, gate reading and transfer lands as a chain
+          event. The audit trail is replayed from those events rather than read
+          from a log kept beside them, so there is no second version of what
+          happened for anyone to disagree with.
         </p>
       </figcaption>
       </div>
@@ -281,45 +308,28 @@ export function GateScanner() {
           border-top: 1px solid #e0e0e3;
         }
         @media (min-width: 520px) {
-          .scan__reason-row { grid-template-columns: 132px minmax(0, 1fr); align-items: baseline; }
+          .scan__reason-row { grid-template-columns: 150px minmax(0, 1fr); align-items: start; }
         }
-        .scan__reason-name {
+        .scan__facet {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          font-size: 14px;
+          color: #17191c;
+        }
+        .scan__contract {
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          font-size: 12px;
+          font-size: 11px;
           letter-spacing: -0.01em;
-          color: #6f7482;
-          transition: color 200ms ease-out;
+          /* #6f7482 measures 4.17:1 on the mist frame — under the floor. */
+          color: #616675;
         }
         .scan__reason-gloss {
           font-size: 13.5px;
           line-height: 1.5;
           text-wrap: pretty;
-          color: #6f7482;
-          transition: color 200ms ease-out;
+          color: #4f5461;
         }
-        /* The row the device is currently showing. Ties the demonstration to
-           the enumeration, so the legend reads as a key rather than a list. */
-        .scan__reason-row[data-active="true"] .scan__reason-name,
-        .scan__reason-row[data-active="true"] .scan__reason-gloss {
-          color: #17191c;
-        }
-        .scan__reason-row[data-active="true"] .scan__reason-name {
-          position: relative;
-        }
-        .scan__reason-row[data-active="true"] .scan__reason-name::before {
-          content: "";
-          position: absolute;
-          left: -13px;
-          top: 5px;
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: #5d2a1a;
-        }
-        .scan__reason-row[data-active="true"][data-ok="true"] .scan__reason-name::before {
-          background: #17191c;
-        }
-
         /* ------------------------------------------------------------ device */
         .scan__device {
           border-radius: 26px;
@@ -392,6 +402,7 @@ export function GateScanner() {
           font-size: 12.5px;
           color: #616675;
         }
+        .scan__post strong { font-weight: 500; color: #17191c; }
 
         .scan__cred {
           display: flex;
@@ -400,14 +411,9 @@ export function GateScanner() {
           gap: 8px 10px;
           margin: 12px 0 0;
         }
-        .scan__role {
-          padding: 3px 10px;
-          border-radius: 999px;
-          border: 1px solid #e7e7ea;
-          font-size: 11px;
-          color: #17191c;
-        }
-        .scan__expiry { font-size: 11.5px; color: #6f7482; }
+        .scan__by-label { font-size: 11px; color: #6f7482; }
+        .scan__by { font-size: 13.5px; color: #17191c; }
+        .scan__expiry { font-size: 11.5px; color: #616675; }
 
         /* The reason block is the only part that changes colour, because the
            reason is the only part that changes meaning. */
