@@ -80,6 +80,15 @@ html {
   color-scheme: light;
 }
 
+/* In-page anchors glide rather than jump. Guarded rather than unconditional:
+   under reduced motion a long animated scroll is exactly the kind of vestibular
+   trigger the setting exists to suppress, so there it stays an instant jump. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   background: var(--surface-canvas);
   color: var(--color-ink-black);

@@ -516,6 +516,10 @@ export default async function LandingPage() {
           color: var(--mkt-faint);
         }
 
+        /* Keeps the section's rule off the very top edge when it is scrolled
+           to from the hero link. */
+        #mechanism { scroll-margin-top: 16px; }
+
         /* --------------------------------------------------------- the stage */
         .landing__stage { margin-top: clamp(8px, 2vw, 20px); }
 
