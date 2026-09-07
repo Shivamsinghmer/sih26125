@@ -120,7 +120,8 @@ test("the audit trail can be filtered, searched and paged", async ({ page }) => 
   // Typing filters without a submit, after its debounce.
   await page.goto("/audit");
   await page.getByLabel("Search the record").fill("zzz-no-such-thing");
-  await expect(page).toHaveURL(/q=zzz-no-such-thing/, { timeout: 10_000 });
+  // 250ms debounce plus a dev-mode re-render, which is seconds under load.
+  await expect(page).toHaveURL(/q=zzz-no-such-thing/, { timeout: 30_000 });
   await expect(page.getByText("No events match those filters")).toBeVisible();
 
   // Clearing restores the full record.

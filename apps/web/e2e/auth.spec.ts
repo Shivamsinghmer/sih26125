@@ -17,10 +17,14 @@ const AUDITOR_KEY = "0x7c852118294e51e653712a81e05800f419141751be58f605c371e1514
 
 test("the landing page is public", async ({ page }) => {
   await page.goto("/");
+  // The hero states the mechanism; the committed pitch sentence closes the page.
   await expect(
     page.getByRole("heading", {
-      name: /Ownership, permission and history become one cryptographic object/i,
+      name: /The token refuses to move without a valid credential/i,
     }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Ownership, permission and history become one cryptographic object/i),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Sign in" }).first()).toBeVisible();
 });
