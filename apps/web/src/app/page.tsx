@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CustodyFeature } from "@/components/CustodyFeature";
+import { FeatureShowcase } from "@/components/FeatureShowcase";
 import { GateDemonstration } from "@/components/GateDemonstration";
 import { getSession } from "@/lib/auth-actions";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/auth-types";
@@ -140,7 +140,7 @@ export default async function LandingPage() {
           </ol>
         </section>
 
-        <CustodyFeature />
+        <FeatureShowcase />
 
         {/* Two surfaces, deliberately unequal — the console is most of the
             system, the gate is one question asked well. */}
