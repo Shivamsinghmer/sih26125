@@ -92,20 +92,53 @@ These are deliberate shortcuts, each already marked in the code:
 ## Deploying
 
 ```bash
-# 1. The chain
+# 0. Secrets. AUTH_SECRET and POSTGRES_PASSWORD have no defaults on purpose:
+#    compose refuses to start without them rather than inventing one.
+cp .env.example .env && openssl rand -hex 32
+
+# 1. The chain, first and on its own — see below for why it is not in the
+#    stack's compose file.
 pnpm --filter @sih26125/chain besu:genesis        # validators per department
 docker compose -f infra/besu/docker-compose.yml up -d
 pnpm --filter @sih26125/contracts hardhat run scripts/deploy.ts --network besu
+pnpm --filter @sih26125/chain besu:verify         # the gate holds on Besu
 
-# 2. The database
-docker compose -f infra/postgres/docker-compose.yml up -d   # real credentials
-pnpm --filter @sih26125/indexer db:push
-pnpm --filter @sih26125/indexer start                        # long-running
-
-# 3. The console
-pnpm --filter @sih26125/web build
-pnpm --filter @sih26125/web start
+# 2. Everything else: Postgres, the indexer, the console.
+docker compose up -d --build
 ```
+
+The chain is a separate `up` and not an oversight. The four validators are meant
+to be held by different departments on different hosts — that is the whole
+security claim — so a single file that starts all four beside the console would
+be modelling the thing this project argues against. The stack attaches to their
+network as an external one instead.
+
+Two things travel by configuration rather than by being built in:
+
+- **Contract addresses.** `deploy.ts` writes `deployments/besu.json`, which is
+  per-machine and git-ignored, so it is in no image. Compose mounts it read-only
+  and points `DEPLOYMENT_FILE` at it; `DEPLOYMENT_JSON` takes the same contents
+  inline where there is nothing to mount. The chain id comes from that file too,
+  which is what stops the console signing for Hardhat's 31337 and sending to
+  Besu's 26125.
+- **The ABIs.** They are Hardhat's compile output, also git-ignored, so both
+  images run `hardhat compile` during the build. The interface is built from the
+  same artifacts the chain runs, which is the property worth keeping.
+
+### On Vercel
+
+`apps/web/vercel.json` sets the root-directory build; the console then needs
+`AUTH_SECRET`, `DATABASE_URL`, `RPC_URL` and `DEPLOYMENT_JSON` as environment
+variables, and a Postgres that tolerates serverless connection churn — a pooled
+endpoint, not a single instance handed a connection per invocation.
+
+It is worth being clear about what this is and is not. Vercel can host the
+console, and for a public demo that is convenient. It cannot host the deployment
+this document describes, because a serverless function reaching the chain means
+the validators' RPC is on the internet, and a consortium network whose whole
+argument is that no single party can rewrite history should not be answering
+strangers. The console belongs beside the nodes; that is what the compose file
+is for.
 
 The validators are held by different departments — IT Security, Internal Audit,
 and two operating divisions — so rewriting history requires collusion across

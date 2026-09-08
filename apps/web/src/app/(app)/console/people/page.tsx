@@ -25,14 +25,14 @@ export default async function PeoplePage() {
           <PeopleGrid personas={state.personas} />
 
           <section className="mt-14 border-t border-mist-gray pt-10">
-            <h2 className="text-subheading leading-subheading">Onboard someone new</h2>
+            <h2 id="onboard" className="scroll-mt-6 text-subheading leading-subheading">Onboard someone new</h2>
             <div className="mt-5">
               <AddPersonPanel />
             </div>
           </section>
 
           <section className="mt-14 border-t border-mist-gray pt-10">
-            <h2 className="text-subheading leading-subheading">Reset to the demo state</h2>
+            <h2 id="reset" className="scroll-mt-6 text-subheading leading-subheading">Reset to the demo state</h2>
             <p className="mt-1 max-w-[70ch] text-caption leading-caption text-label">
               Registers the demo identities, issues their credentials and mints one
               asset. Safe to run more than once.

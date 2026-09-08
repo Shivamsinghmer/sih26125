@@ -133,7 +133,10 @@ export default async function LoginPage() {
         .signin__inner {
           max-width: 1000px;
           margin: 0 auto;
-          padding: clamp(24px, 4vh, 56px) clamp(20px, 5vw, 48px) 72px;
+          /* Height-aware. Sized only in vw, the page ran 107px past the fold
+             on a 768-tall laptop — the one screen it most needs to fit on. */
+          padding: clamp(12px, 2vh, 56px) clamp(20px, 5vw, 48px)
+            clamp(20px, 3vh, 72px);
         }
 
         /* ------------------------------------------------------------- head */
@@ -147,14 +150,15 @@ export default async function LoginPage() {
         .signin__back:hover { color: #17191c; }
 
         .signin__title {
-          margin: clamp(20px, 4vh, 40px) 0 0;
-          font-size: clamp(38px, 5.4vw, 62px);
+          margin: clamp(12px, 2.4vh, 40px) 0 0;
+          /* min() so a wide but short screen gets the size its height affords. */
+          font-size: clamp(30px, min(5.4vw, 5.6vh), 62px);
           line-height: 1.06;
           letter-spacing: -0.028em;
           color: #17191c;
         }
         .signin__lede {
-          margin: 14px 0 0;
+          margin: clamp(10px, 1.6vh, 14px) 0 0;
           max-width: 58ch;
           font-size: 17px;
           line-height: 1.55;
@@ -166,7 +170,7 @@ export default async function LoginPage() {
         .signin__ways {
           display: grid;
           gap: clamp(20px, 3vw, 28px);
-          margin-top: clamp(28px, 5vh, 48px);
+          margin-top: clamp(16px, 2.6vh, 48px);
           align-items: start;
         }
         @media (min-width: 880px) {
@@ -251,9 +255,22 @@ export default async function LoginPage() {
         }
 
         .signin__foot {
-          margin: clamp(32px, 5vh, 56px) 0 0;
+          margin: clamp(14px, 2.2vh, 56px) 0 0;
           font-size: 13px;
           color: #4a5060;
+        }
+
+        @media (max-height: 860px) and (min-width: 880px) {
+          .signin__inner { padding-top: 14px; padding-bottom: 18px; }
+          .signin__title { margin-top: 10px; }
+          .signin__lede { margin-top: 8px; font-size: 16px; }
+          .signin__ways { margin-top: 14px; }
+          .signin__way { padding: 16px clamp(18px, 2.2vw, 32px) 18px; }
+          .signin__way-head { padding-bottom: 11px; }
+          .signin__way-body { margin-top: 11px; font-size: 14px; }
+          .signin__form { margin-top: 13px; }
+          .signin__demo { margin-top: 13px; padding: 11px 14px; }
+          .signin__foot { margin-top: 12px; }
         }
 
         @media (max-width: 500px) {

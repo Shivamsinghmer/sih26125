@@ -18,8 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { createPublicClient, http, parseEventLogs, type Address } from "viem";
-import { hardhat } from "viem/chains";
+import { createPublicClient, defineChain, http, parseEventLogs, type Address } from "viem";
 
 import { assetTokenAbi, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
 
@@ -39,16 +38,43 @@ const DATABASE_URL =
   process.env.DATABASE_URL ?? "postgres://postgres:postgres@127.0.0.1:5432/sih26125";
 const POLL_MS = Number(process.env.POLL_MS ?? 4000);
 
-const publicClient = createPublicClient({ chain: hardhat, transport: http(RPC_URL) });
 const sql = postgres(DATABASE_URL);
 const db = drizzle(sql);
 
+/**
+ * The addresses to watch.
+ *
+ * The file `deploy.ts` writes is per-machine and git-ignored, so it is there
+ * during development and never inside a container image. The overrides match the
+ * console's, for the same reasons — see apps/web/src/lib/chain.ts:
+ * `DEPLOYMENT_JSON` inline, `DEPLOYMENT_FILE` as a path, `DEPLOYMENT_NETWORK` to
+ * choose between local files.
+ */
 const deployment = JSON.parse(
-  readFileSync(
-    fileURLToPath(new URL("../../../deployments/localhost.json", import.meta.url)),
-    "utf8",
-  ),
-) as { contracts: Record<string, Address> };
+  process.env.DEPLOYMENT_JSON ??
+    readFileSync(
+      process.env.DEPLOYMENT_FILE ??
+        fileURLToPath(
+          new URL(
+            `../../../deployments/${process.env.DEPLOYMENT_NETWORK ?? "localhost"}.json`,
+            import.meta.url,
+          ),
+        ),
+      "utf8",
+    ),
+) as { chainId: number; network: string; contracts: Record<string, Address> };
+
+// Read from the deployment, not hardcoded: the indexer only reads, but a client
+// pinned to Hardhat's 31337 while pointed at Besu's 26125 is a mismatch waiting
+// to matter the moment anything here signs.
+const chain = defineChain({
+  id: deployment.chainId,
+  name: deployment.network,
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: { default: { http: [RPC_URL] } },
+});
+
+const publicClient = createPublicClient({ chain, transport: http(RPC_URL) });
 
 const SOURCES: { name: ContractName; address: Address; abi: readonly unknown[] }[] = [
   {

@@ -1,0 +1,99 @@
+# The whole stack, minus the chain.
+#
+#   docker compose -f infra/besu/docker-compose.yml up -d      # 1. the chain
+#   pnpm --filter @sih26125/contracts hardhat run scripts/deploy.ts --network besu
+#   docker compose up -d --build                               # 2. everything else
+#
+# The chain comes up first and separately, and not only for ordering: the four
+# validators are meant to be held by different departments on different hosts, so
+# a compose file that starts all four alongside the console would be modelling
+# the thing this project exists to argue against. Here they are simply an
+# external network this stack attaches to.
+#
+# Contract addresses arrive by mounting the file `deploy.ts` wrote, rather than
+# being baked into an image — the same image runs against Besu or a local chain.
+#
+# This supersedes infra/postgres/docker-compose.yml, which exists for developing
+# against a chain running on the host. Stop that one first — they deliberately
+# share a container name, so the second to start fails loudly rather than leaving
+# two databases holding different halves of the truth.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: sih26125-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-sih26125}
+    # Not published to the host. Nothing outside this stack has any business
+    # reaching the personal data, and the indexer's index is rebuildable anyway.
+    expose:
+      - "5432"
+    volumes:
+      - sih26125-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sih26125}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  indexer:
+    build:
+      context: .
+      dockerfile: packages/indexer/Dockerfile
+    container_name: sih26125-indexer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sih26125}
+      RPC_URL: ${RPC_URL:-http://besu-node-1:8545}
+      DEPLOYMENT_FILE: /deployments/${DEPLOYMENT_NETWORK:-besu}.json
+      POLL_MS: ${POLL_MS:-4000}
+    volumes:
+      - ./deployments:/deployments:ro
+    networks:
+      - internal
+      - besu
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: sih26125-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      # session.ts refuses to start without this in production, which is the
+      # behaviour you want — a signing key everybody knows is no signature.
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env — openssl rand -hex 32}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sih26125}
+      RPC_URL: ${RPC_URL:-http://besu-node-1:8545}
+      DEPLOYMENT_FILE: /deployments/${DEPLOYMENT_NETWORK:-besu}.json
+    volumes:
+      - ./deployments:/deployments:ro
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    networks:
+      - internal
+      - besu
+
+networks:
+  internal:
+  # Created by infra/besu/docker-compose.yml, which must be up first. Declared
+  # external so this file joins that network rather than defining a second one
+  # the validators are not on.
+  besu:
+    external: true
+    name: besu
+
+volumes:
+  sih26125-pgdata:

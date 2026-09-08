@@ -8,10 +8,24 @@ import type { ConsoleRole } from "./auth-types";
  * detail. Anything a role cannot open is never rendered: a link that redirects
  * on click teaches people the app is unreliable.
  */
+export interface NavSection {
+  /** A real anchor on the item's page — never a link to something invented. */
+  href: string;
+  label: string;
+}
+
 export interface NavItem {
   href: string;
   label: string;
   description: string;
+  /**
+   * What you can actually do once you are there.
+   *
+   * Only screens that genuinely have separate sections carry these. "Move an
+   * asset" is one form on one page and gets none: padding the rail out with
+   * plausible-looking links that go nowhere teaches people to distrust it.
+   */
+  sections?: NavSection[];
 }
 
 export interface NavGroup {
@@ -29,14 +43,35 @@ const ADMIN_GROUPS: NavGroup[] = [
   {
     title: "Identity",
     items: [
-      { href: "/console/people", label: "People", description: "Onboard, view credentials, print cards" },
-      { href: "/console/credentials", label: "Credentials", description: "Issue and revoke roles" },
+      {
+        href: "/console/people",
+        label: "People",
+        description: "Onboard, view credentials, print cards",
+        sections: [
+          { href: "/console/people#onboard", label: "Onboard someone new" },
+          { href: "/console/people#reset", label: "Reset to the demo state" },
+        ],
+      },
+      {
+        href: "/console/credentials",
+        label: "Credentials",
+        description: "Issue and revoke roles",
+        sections: [
+          { href: "/console/credentials#issue", label: "Issue a credential" },
+          { href: "/console/credentials#revoke", label: "Revoke a credential" },
+        ],
+      },
     ],
   },
   {
     title: "Custody",
     items: [
-      { href: "/console/assets", label: "Assets", description: "Register and assign equipment" },
+      {
+        href: "/console/assets",
+        label: "Assets",
+        description: "Register and assign equipment",
+        sections: [{ href: "/console/assets#register", label: "Register an asset" }],
+      },
       { href: "/console/transfers", label: "Move an asset", description: "Transfer, gated by credential" },
     ],
   },

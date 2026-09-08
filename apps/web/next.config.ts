@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
   // Next has to compile them itself.
   transpilePackages: ["@sih26125/chain", "@sih26125/identity"],
 
+  // Emit a self-contained server with only the files actually reached. In a pnpm
+  // workspace this is the difference between a container that carries the whole
+  // monorepo's node_modules and one that carries what the console uses. Vercel
+  // builds its own bundle and ignores this.
+  output: "standalone",
+
   // There is a stray lockfile above this repo; without this Next infers the
   // wrong workspace root and warns on every start.
   outputFileTracingRoot: repoRoot,

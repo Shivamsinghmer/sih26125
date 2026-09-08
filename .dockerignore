@@ -1,0 +1,40 @@
+# Anything installed or generated on the host. The image builds its own, and
+# copying a Windows/macOS node_modules into a Linux container is how you get a
+# native module that segfaults instead of one that is simply missing.
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+out
+**/out
+artifacts
+**/artifacts
+cache
+**/cache
+typechain-types
+**/typechain-types
+coverage
+**/coverage
+.turbo
+**/.turbo
+*.tsbuildinfo
+
+.git
+.github
+
+# Secrets and per-machine state. Configuration reaches the container through
+# the environment, never by being baked into a layer.
+.env
+.env.*
+!.env.example
+**/playwright/.auth
+**/test-results
+**/playwright-report
+
+# Besu's chain data and the Postgres volume are runtime state, not build input.
+infra/besu/nodes/*/data
+
+*.log
+.DS_Store

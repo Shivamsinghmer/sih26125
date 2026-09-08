@@ -19,7 +19,11 @@ test.beforeEach(async ({ page }) => {
 
 test("the dashboard opens on what the chain currently holds", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByText("Recorded events")).toBeVisible();
+  // Was `getByText("Recorded events")`, a static tile label. The dashboard
+  // now leads with the chain-activity chart, so assert on its readout: a count
+  // that only renders if events were actually read off the chain.
+  await expect(page.getByText(/\d+ events across \d+ intervals/)).toBeVisible();
+  await expect(page.getByText("Assets under custody")).toBeVisible();
 });
 
 test("step 1 — seeding registers identities and issues credentials", async ({ page }) => {

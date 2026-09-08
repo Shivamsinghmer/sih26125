@@ -33,7 +33,7 @@ export default async function AssetsPage() {
           <AssetsTable assets={state.assets} people={people} />
 
           <section className="mt-14 border-t border-mist-gray pt-10">
-            <h2 className="text-subheading leading-subheading">Register an asset</h2>
+            <h2 id="register" className="scroll-mt-6 text-subheading leading-subheading">Register an asset</h2>
             <p className="mt-1 max-w-[70ch] text-caption leading-caption text-label">
               Only an account holding the issuer role can mint — enforced by the
               contract, not by this form.
