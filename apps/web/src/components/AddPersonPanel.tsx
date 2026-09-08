@@ -32,7 +32,7 @@ export function AddPersonPanel() {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="max-w-[70ch] text-body leading-body text-slate-gray">
+      <p className="max-w-[70ch] text-body leading-body text-label">
         Onboarding writes the name, title and photo to Postgres and a
         decentralised identity to the chain. Nothing identifying a person
         reaches the chain — only a DID, a public key and a status flag — which
@@ -52,7 +52,7 @@ export function AddPersonPanel() {
                 style={{ boxShadow: "var(--shadow-subtle)" }}
               />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-mist-gray text-caption text-smoke-gray">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-mist-gray text-caption text-subtle">
                 none
               </div>
             )}
@@ -61,7 +61,7 @@ export function AddPersonPanel() {
               name="photo"
               accept="image/*"
               onChange={onPhotoChange}
-              className="text-caption leading-caption text-slate-gray file:mr-3 file:rounded-full file:border-0 file:bg-ink-black file:px-4 file:py-2 file:text-[13px] file:text-paper-white"
+              className="text-caption leading-caption text-label file:mr-3 file:rounded-full file:border-0 file:bg-ink-black file:px-4 file:py-2 file:text-[13px] file:text-paper-white"
             />
           </div>
         </Field>

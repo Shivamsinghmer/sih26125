@@ -41,7 +41,7 @@ export function ActionResultCard({ result }: { result: ActionResult }) {
       >
         <p className="text-body-lg leading-body-lg">{result.message}</p>
         {result.hash ? (
-          <p className="mono-addr mt-2 text-slate-gray">{result.hash}</p>
+          <p className="mono-addr mt-2 text-label">{result.hash}</p>
         ) : null}
       </div>
     );
@@ -52,7 +52,7 @@ export function ActionResultCard({ result }: { result: ActionResult }) {
       role="alert"
       className="rounded-3xl border border-mist-gray bg-fog-white px-8 py-6"
     >
-      <p className="text-caption leading-caption text-slate-gray">
+      <p className="text-caption leading-caption text-label">
         Something went wrong before the contract was reached.
       </p>
       <p className="mt-2 text-body leading-body">{result.message}</p>

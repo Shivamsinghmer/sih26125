@@ -23,7 +23,7 @@ export default async function CredentialsPage() {
       </PageHeading>
 
       {!state ? (
-        <p className="text-body leading-body text-slate-gray">
+        <p className="text-body leading-body text-label">
           No chain to read. Deploy the contracts and reload.
         </p>
       ) : (

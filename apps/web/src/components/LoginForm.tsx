@@ -12,7 +12,7 @@ export function LoginForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-2">
-        <span className="text-caption leading-caption text-slate-gray">Terminal ID</span>
+        <span className="text-caption leading-caption text-label">Terminal ID</span>
         <input
           name="username"
           autoComplete="username"
@@ -23,7 +23,7 @@ export function LoginForm() {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-caption leading-caption text-slate-gray">Password</span>
+        <span className="text-caption leading-caption text-label">Password</span>
         <input
           name="password"
           type="password"

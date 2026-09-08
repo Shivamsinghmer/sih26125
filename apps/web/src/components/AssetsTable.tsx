@@ -11,7 +11,7 @@ export function AssetsTable({
 }) {
   if (assets.length === 0) {
     return (
-      <p className="text-body leading-body text-slate-gray">Nothing minted yet.</p>
+      <p className="text-body leading-body text-label">Nothing minted yet.</p>
     );
   }
 
@@ -19,7 +19,7 @@ export function AssetsTable({
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-left">
         <thead>
-          <tr className="text-caption leading-caption text-ash-gray">
+          <tr className="text-caption leading-caption text-label">
             <th className="pb-3 font-normal">Asset</th>
             <th className="pb-3 font-normal">Held by</th>
             <th className="pb-3 font-normal">Requires</th>
@@ -34,7 +34,7 @@ export function AssetsTable({
                 <td className="py-4 tabular">#{asset.tokenId.toString()}</td>
                 <td className="py-4">{holder?.name ?? shortAddress(asset.owner)}</td>
                 <td className="py-4">{asset.requiredRoleLabel}</td>
-                <td className="py-4 tabular text-slate-gray">
+                <td className="py-4 tabular text-label">
                   {new Date(asset.mintedAt * 1000).toLocaleString("en-GB", {
                     day: "numeric",
                     month: "short",

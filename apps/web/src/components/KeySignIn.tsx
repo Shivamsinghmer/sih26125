@@ -129,12 +129,12 @@ export function KeySignIn() {
       {mode === "unlock" && stored ? (
         <form onSubmit={onUnlock} className="flex flex-col gap-4">
           <div className="rounded-2xl bg-mist-gray px-5 py-4">
-            <p className="text-caption leading-caption text-slate-gray">Key held in this browser</p>
+            <p className="text-caption leading-caption text-label">Key held in this browser</p>
             <p className="mono-addr mt-1">{shorten(stored.address)}</p>
           </div>
 
           <label className="flex flex-col gap-2">
-            <span className="text-caption leading-caption text-slate-gray">Passphrase</span>
+            <span className="text-caption leading-caption text-label">Passphrase</span>
             <input
               name="passphrase"
               type="password"
@@ -163,7 +163,7 @@ export function KeySignIn() {
                 setMode("enrol");
                 setState(SIWE_IDLE);
               }}
-              className="text-caption leading-caption text-slate-gray underline underline-offset-2 hover:text-ink-black"
+              className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
             >
               Use a different key
             </button>
@@ -172,7 +172,7 @@ export function KeySignIn() {
       ) : (
         <form onSubmit={onEnrol} className="flex flex-col gap-4">
           <label className="flex flex-col gap-2">
-            <span className="text-caption leading-caption text-slate-gray">
+            <span className="text-caption leading-caption text-label">
               Private key
             </span>
             <input
@@ -186,7 +186,7 @@ export function KeySignIn() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-caption leading-caption text-slate-gray">
+            <span className="text-caption leading-caption text-label">
               Passphrase to encrypt it in this browser
             </span>
             <input
@@ -211,7 +211,7 @@ export function KeySignIn() {
             </PillButton>
           </div>
 
-          <p className="text-caption leading-caption text-smoke-gray">
+          <p className="text-caption leading-caption text-subtle">
             The key is encrypted with your passphrase and kept in this browser
             only. Neither ever reaches the server — it sees a signature, and
             reads your role from the chain.

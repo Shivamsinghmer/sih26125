@@ -50,7 +50,7 @@ export default async function CardPage({
   return (
     <main className="mx-auto max-w-[900px] px-6 py-16 print:p-0">
       <div className="flex items-center justify-between print:hidden">
-        <Link href="/" className="text-body leading-body text-slate-gray hover:text-ink-black">
+        <Link href="/" className="text-body leading-body text-label hover:text-ink-black">
           ← Back to console
         </Link>
         <PrintButton />
@@ -102,16 +102,16 @@ export default async function CardPage({
       )}
 
       <div className="mx-auto mt-8 max-w-[70ch] text-center print:hidden">
-        <p className="text-caption leading-caption text-smoke-gray">
+        <p className="text-caption leading-caption text-subtle">
           The role printed here is a convenience, not a guarantee — it can be
           revoked the moment after this is laminated. A guard scanning the QR
           always sees the current on-chain status; this printed line never
           overrides that.
         </p>
-        <p className="mt-4 text-caption leading-caption text-ash-gray">
+        <p className="mt-4 text-caption leading-caption text-label">
           The QR encodes exactly this, and nothing else:
         </p>
-        <p className="mono-addr mt-1 break-all text-slate-gray">{did}</p>
+        <p className="mono-addr mt-1 break-all text-label">{did}</p>
       </div>
 
       <style>{`

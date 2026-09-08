@@ -18,6 +18,17 @@
   --color-ash-gray: #979799;
   --color-smoke-gray: #a3a6af;
   --color-blush-peach: #fbe1d1;
+
+  /* Text greys.
+   *
+   * Steep specifies slate/ash/smoke for links and tertiary labels; the app was
+   * using them for form labels and helper copy, where they measure 4.23:1,
+   * 2.92:1 and 2.43:1 on white — under the 4.5:1 floor for text that is read
+   * rather than glanced at. The brand tokens above are untouched; these are the
+   * ones text uses.
+   */
+  --color-label: #616675;   /* 5.73:1 on white, 5.12:1 on mist */
+  --color-subtle: #4f5461;  /* 7.3:1 — helper copy and long explanations */
   --color-sienna-brown: #5d2a1a;
 
   /* Typography */

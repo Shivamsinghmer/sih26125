@@ -71,7 +71,7 @@ export function AuditFilters({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-2">
-          <span className="text-caption leading-caption text-slate-gray">Contract</span>
+          <span className="text-caption leading-caption text-label">Contract</span>
           <select
             name="contract"
             value={current.contract}
@@ -88,7 +88,7 @@ export function AuditFilters({
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-caption leading-caption text-slate-gray">Event</span>
+          <span className="text-caption leading-caption text-label">Event</span>
           <select
             name="event"
             value={current.event}
@@ -105,7 +105,7 @@ export function AuditFilters({
         </label>
 
         <label className="flex min-w-[240px] flex-1 flex-col gap-2">
-          <span className="text-caption leading-caption text-slate-gray">
+          <span className="text-caption leading-caption text-label">
             Search the record
           </span>
           <input
@@ -125,14 +125,14 @@ export function AuditFilters({
               applied.current = "";
               startTransition(() => router.replace(pathname, { scroll: false }));
             }}
-            className="rounded-full border border-mist-gray px-5 py-3 text-body text-slate-gray hover:border-ink-black hover:text-ink-black"
+            className="rounded-full border border-mist-gray px-5 py-3 text-body text-label hover:border-ink-black hover:text-ink-black"
           >
             Clear
           </button>
         ) : null}
       </div>
 
-      <p className="text-caption leading-caption text-smoke-gray" aria-live="polite">
+      <p className="text-caption leading-caption text-subtle" aria-live="polite">
         {pending
           ? "Filtering…"
           : `${

@@ -30,7 +30,7 @@ export function TransferPanel({
 
   if (assets.length === 0) {
     return (
-      <p className="text-body leading-body text-slate-gray">
+      <p className="text-body leading-body text-label">
         No assets minted yet — seed the demo or mint one first.
       </p>
     );

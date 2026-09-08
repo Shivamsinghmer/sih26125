@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ContractExcerpt } from "@/components/ContractExcerpt";
 import { FeatureShowcase } from "@/components/FeatureShowcase";
 import { GateScanner } from "@/components/GateScanner";
+import { SkyBackdrop } from "@/components/SkyBackdrop";
 import { getSession } from "@/lib/auth-actions";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/auth-types";
 
@@ -86,110 +87,7 @@ export default async function LandingPage() {
 
   return (
     <div className="landing-shell">
-      {/* hero-financial's background, carried over as the block builds it: a
-          pale base, the sky photograph at half opacity, two blurred gradient
-          bars in the top-left corner, and a blue wash over the first 600px.
-          The photograph is vendored into /public rather than hotlinked from
-          Unsplash — this demo is expected to run on a closed network, and a
-          hero that needs a CDN would come up bare there. */}
-      <div className="landing__sky" aria-hidden="true">
-        <div className="landing__sky-photo" />
-
-        <svg
-          className="landing__sky-blobs"
-          width="358"
-          height="483"
-          viewBox="0 0 358 483"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g filter="url(#skyBlurA)">
-            <rect
-              x="-86.9961"
-              y="-33.114"
-              width="72"
-              height="541"
-              rx="36"
-              transform="rotate(-30.8182 -86.9961 -33.114)"
-              fill="url(#skyFillA)"
-            />
-          </g>
-          <g filter="url(#skyBlurB)">
-            <rect
-              x="-17"
-              y="-135.113"
-              width="50.0937"
-              height="541"
-              rx="25.0469"
-              transform="rotate(-30.8182 -17 -135.113)"
-              fill="url(#skyFillB)"
-            />
-          </g>
-          <defs>
-            <filter
-              id="skyBlurA"
-              x="-137.641"
-              y="-120.646"
-              width="440.285"
-              height="602.787"
-              filterUnits="userSpaceOnUse"
-              colorInterpolationFilters="sRGB"
-            >
-              <feFlood floodOpacity="0" result="BackgroundImageFix" />
-              <feBlend
-                mode="normal"
-                in="SourceGraphic"
-                in2="BackgroundImageFix"
-                result="shape"
-              />
-              <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur" />
-            </filter>
-            <filter
-              id="skyBlurB"
-              x="-71.707"
-              y="-215.486"
-              width="429.598"
-              height="599.69"
-              filterUnits="userSpaceOnUse"
-              colorInterpolationFilters="sRGB"
-            >
-              <feFlood floodOpacity="0" result="BackgroundImageFix" />
-              <feBlend
-                mode="normal"
-                in="SourceGraphic"
-                in2="BackgroundImageFix"
-                result="shape"
-              />
-              <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur" />
-            </filter>
-            <linearGradient
-              id="skyFillA"
-              x1="-50.9961"
-              y1="-33.114"
-              x2="-50.9961"
-              y2="507.886"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop stopColor="#91bbfb" />
-              <stop offset="1" stopColor="#E6F1FF" />
-            </linearGradient>
-            <linearGradient
-              id="skyFillB"
-              x1="8.04686"
-              y1="-135.113"
-              x2="8.04686"
-              y2="405.887"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop stopColor="#8dbafd" />
-              <stop offset="1" stopColor="#c1d9f8" />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        <div className="landing__sky-wash" />
-        <div className="landing__sky-veil" />
-      </div>
+      <SkyBackdrop variant="hero" />
 
       <div className="mkt landing">
       <header className="landing__bar">
@@ -378,75 +276,19 @@ export default async function LandingPage() {
       </footer>
 
       <style>{`
-        /* ------------------------------------------------------------- sky */
-        /* The band is full-viewport-width from inside a 1180px container, so it
-           is pulled out with left:50% + 100vw. overflow-x: clip on the root
-           absorbs the resulting overflow without turning the page into a scroll
-           container the way hidden would. */
+        /* The sky is a component now (SkyBackdrop); the shell only has to give
+           it something to be absolute inside, and a stacking context — at
+           z-index -1 with no isolating ancestor it sinks behind the body's own
+           background and disappears. */
         .landing-shell {
           position: relative;
           isolation: isolate;
+          /* The mist bands bleed with width:100vw, which counts the scrollbar,
+             so they spill ~8px and raise a horizontal scrollbar unless the
+             shell absorbs it. clip rather than hidden: hidden would make
+             this a scroll container. Safe for the backdrop, which spans with
+             left/right:0 and so has nothing outside the shell to lose. */
           overflow-x: clip;
-        }
-
-        /* Spans the shell, which is already full body width. An earlier version
-           used left:50% + 100vw from inside the 1180px container and clipped it
-           on that same element — which is the container, so the bleed was cut
-           back to 1180px and left white margins at both edges. */
-        .landing__sky {
-          position: absolute;
-          z-index: -1;
-          top: 0;
-          left: 0;
-          right: 0;
-          /* Approximate by design: the band dissolves before it ends, so its
-             exact stopping point never shows. */
-          height: clamp(820px, 108vh, 1320px);
-          overflow: hidden;
-          pointer-events: none;
-          background: #f7f9fc;
-          -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
-        }
-
-        .landing__sky-photo {
-          position: absolute;
-          inset: 0;
-          background: url("/hero-sky.jpg") center / cover no-repeat;
-          opacity: 0.85;
-        }
-
-        .landing__sky-blobs { position: absolute; top: 0; left: 0; }
-
-        .landing__sky-wash {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 600px;
-          /* The block's wash is opaque at its top stop, which erased the clouds
-             in exactly the band where they read best. Same hues, carried as
-             alpha so the photograph stays visible through it. */
-          background: linear-gradient(
-            to bottom,
-            rgba(239, 246, 255, 0.82),
-            rgba(219, 234, 254, 0.4),
-            transparent
-          );
-        }
-
-        /* A legibility scrim, not a decoration. Over the strongest part of the
-           photograph, Steep's secondary greys measure 2.7:1 — the sky has to
-           stay a sky at the edges while the centre column stays readable. */
-        .landing__sky-veil {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(
-            ellipse 68% 54% at 50% 40%,
-            rgba(255, 255, 255, 0.9) 0%,
-            rgba(255, 255, 255, 0.72) 46%,
-            rgba(255, 255, 255, 0) 78%
-          );
         }
 
         /* ------------------------------------------------------------ bar */

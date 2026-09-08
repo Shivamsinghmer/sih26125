@@ -29,9 +29,9 @@ pnpm demo:reset`}
 function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <Card>
-      <p className="text-caption leading-caption text-slate-gray">{label}</p>
+      <p className="text-caption leading-caption text-label">{label}</p>
       <p className="display-serif mt-2 text-heading leading-none tracking-heading">{value}</p>
-      <p className="mt-3 text-caption leading-caption text-smoke-gray">{hint}</p>
+      <p className="mt-3 text-caption leading-caption text-subtle">{hint}</p>
     </Card>
   );
 }
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
           <h2 className="text-subheading leading-subheading">Assets under custody</h2>
           <Link
             href="/console/assets"
-            className="text-caption leading-caption text-slate-gray underline underline-offset-2 hover:text-ink-black"
+            className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
           >
             Manage assets →
           </Link>
@@ -110,14 +110,14 @@ export default async function DashboardPage() {
           <h2 className="text-subheading leading-subheading">Latest activity</h2>
           <Link
             href="/audit"
-            className="text-caption leading-caption text-slate-gray underline underline-offset-2 hover:text-ink-black"
+            className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
           >
             Full audit trail →
           </Link>
         </div>
 
         {recent.length === 0 ? (
-          <p className="mt-5 text-body leading-body text-slate-gray">
+          <p className="mt-5 text-body leading-body text-label">
             Nothing has happened on this chain yet.
           </p>
         ) : (
@@ -136,7 +136,7 @@ export default async function DashboardPage() {
                 >
                   {entry.description}
                 </p>
-                <p className="mono-addr mt-1 text-smoke-gray">
+                <p className="mono-addr mt-1 text-subtle">
                   block {entry.blockNumber.toString()} · {entry.contract}
                 </p>
               </li>

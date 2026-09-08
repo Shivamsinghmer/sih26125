@@ -14,7 +14,7 @@ export function PageHeading({
         {title}
       </h1>
       {children ? (
-        <p className="mt-3 max-w-[68ch] text-body-lg leading-body-lg text-slate-gray">
+        <p className="mt-3 max-w-[68ch] text-body-lg leading-body-lg text-label">
           {children}
         </p>
       ) : null}

@@ -23,19 +23,19 @@ export function PeopleGrid({ personas }: { personas: PersonaState[] }) {
                   className="h-11 w-11 rounded-xl object-cover"
                 />
               ) : (
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-paper-white text-body text-smoke-gray">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-paper-white text-body text-subtle">
                   {p.persona.name.charAt(0)}
                 </div>
               )}
               <div className="min-w-0">
                 <p className="text-body-lg leading-body-lg">{p.persona.name}</p>
-                <p className="truncate text-caption leading-caption text-slate-gray">
+                <p className="truncate text-caption leading-caption text-label">
                   {p.persona.title}
                 </p>
               </div>
             </div>
 
-            <p className="mono-addr mt-3 text-ash-gray">
+            <p className="mono-addr mt-3 text-label">
               {shortAddress(p.persona.address)}
             </p>
 
@@ -50,7 +50,7 @@ export function PeopleGrid({ personas }: { personas: PersonaState[] }) {
                   </span>
                 ))
               ) : (
-                <span className="text-caption leading-caption text-smoke-gray">
+                <span className="text-caption leading-caption text-subtle">
                   No valid credential
                 </span>
               )}
@@ -65,7 +65,7 @@ export function PeopleGrid({ personas }: { personas: PersonaState[] }) {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-2">
-              <p className="text-caption leading-caption text-smoke-gray">
+              <p className="text-caption leading-caption text-subtle">
                 {p.registered ? "DID registered on chain" : "Not yet registered"}
               </p>
               {p.registered ? (

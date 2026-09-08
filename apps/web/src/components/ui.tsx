@@ -11,7 +11,7 @@ export function Section({
 }) {
   return (
     <section className="mt-20">
-      <p className="text-caption leading-caption text-ash-gray">{eyebrow}</p>
+      <p className="text-caption leading-caption text-label">{eyebrow}</p>
       <h2 className="display-serif mt-2 text-heading leading-heading tracking-heading">
         {title}
       </h2>
@@ -69,7 +69,7 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-caption leading-caption text-slate-gray">{label}</span>
+      <span className="text-caption leading-caption text-label">{label}</span>
       {children}
     </label>
   );

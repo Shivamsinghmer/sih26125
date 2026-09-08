@@ -26,18 +26,18 @@ export function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-8 border-b border-mist-gray bg-paper-white px-6 py-8 md:sticky md:top-0 md:h-screen md:w-[264px] md:overflow-y-auto md:border-b-0 md:border-r md:px-7">
+    <aside className="flex w-full shrink-0 flex-col gap-8 border-b border-mist-gray px-6 py-8 md:sticky md:top-0 md:h-screen md:w-[264px] md:overflow-y-auto md:border-b-0 md:border-r md:px-7">
       <div>
         <Link href="/" className="block">
           <p className="text-caption leading-caption text-ink-black">BEL Asset Custody</p>
-          <p className="text-caption leading-caption text-ash-gray">SIH26125</p>
+          <p className="text-caption leading-caption text-[#616675]">SIH26125</p>
         </Link>
       </div>
 
       <nav className="flex flex-1 flex-col gap-7">
         {groups.map((group) => (
           <div key={group.title}>
-            <p className="text-[11px] uppercase tracking-[0.08em] text-smoke-gray">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#616675]">
               {group.title}
             </p>
             <ul className="mt-3 flex flex-col gap-1">
@@ -51,7 +51,7 @@ export function Sidebar({
                       className={`block rounded-2xl px-3 py-2 text-body leading-body transition-colors ${
                         active
                           ? "bg-ink-black text-paper-white"
-                          : "text-slate-gray hover:bg-mist-gray hover:text-ink-black"
+                          : "text-[#414755] hover:bg-mist-gray hover:text-ink-black"
                       }`}
                     >
                       {item.label}
@@ -67,9 +67,9 @@ export function Sidebar({
       <div className="flex flex-col gap-3 border-t border-mist-gray pt-5">
         <div>
           <p className="text-caption leading-caption text-ink-black">{who}</p>
-          <p className="text-caption leading-caption text-slate-gray">{roleLabel}</p>
+          <p className="text-caption leading-caption text-[#616675]">{roleLabel}</p>
         </div>
-        {chainNote ? <p className="mono-addr text-smoke-gray">{chainNote}</p> : null}
+        {chainNote ? <p className="mono-addr text-[#616675]">{chainNote}</p> : null}
       </div>
     </aside>
   );

@@ -22,7 +22,7 @@ export function AuditTrail({
 }) {
   if (entries.length === 0) {
     return (
-      <p className="text-body leading-body text-slate-gray">
+      <p className="text-body leading-body text-label">
         {filtered
           ? "No events match those filters."
           : "Nothing has happened on this chain yet."}
@@ -32,7 +32,7 @@ export function AuditTrail({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="max-w-[70ch] text-body leading-body text-slate-gray">
+      <p className="max-w-[70ch] text-body leading-body text-label">
         Reconstructed from chain events alone — no application database is consulted
         to build this view. The audit record is not a log about the transactions; it
         is the transactions, so the two can never disagree.
@@ -44,10 +44,10 @@ export function AuditTrail({
             key={`${entry.transactionHash}-${entry.logIndex}`}
             className="grid grid-cols-[auto_1fr] gap-x-6 border-t border-mist-gray py-4 md:grid-cols-[120px_150px_1fr]"
           >
-            <span className="tabular text-caption leading-caption text-ash-gray">
+            <span className="tabular text-caption leading-caption text-label">
               {formatTime(entry.timestamp)}
             </span>
-            <span className="text-caption leading-caption text-ash-gray">
+            <span className="text-caption leading-caption text-label">
               {entry.contract}
             </span>
             <div className="col-span-2 md:col-span-1">
@@ -60,7 +60,7 @@ export function AuditTrail({
               >
                 {entry.description}
               </p>
-              <p className="mono-addr mt-1 text-smoke-gray">
+              <p className="mono-addr mt-1 text-subtle">
                 block {entry.blockNumber.toString()} · {entry.transactionHash.slice(0, 18)}…
               </p>
             </div>
@@ -68,7 +68,7 @@ export function AuditTrail({
         ))}
       </ol>
 
-      <p className="text-caption leading-caption text-smoke-gray">
+      <p className="text-caption leading-caption text-subtle">
         Showing {entries.length}. Every one carries the transaction that produced it.
       </p>
     </div>

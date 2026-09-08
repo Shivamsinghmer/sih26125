@@ -25,7 +25,7 @@ export default async function AssetsPage() {
       </PageHeading>
 
       {!state ? (
-        <p className="text-body leading-body text-slate-gray">
+        <p className="text-body leading-body text-label">
           No chain to read. Deploy the contracts and reload.
         </p>
       ) : (
@@ -34,7 +34,7 @@ export default async function AssetsPage() {
 
           <section className="mt-14 border-t border-mist-gray pt-10">
             <h2 className="text-subheading leading-subheading">Register an asset</h2>
-            <p className="mt-1 max-w-[70ch] text-caption leading-caption text-slate-gray">
+            <p className="mt-1 max-w-[70ch] text-caption leading-caption text-label">
               Only an account holding the issuer role can mint — enforced by the
               contract, not by this form.
             </p>

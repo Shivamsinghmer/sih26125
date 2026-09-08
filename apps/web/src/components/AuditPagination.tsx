@@ -30,27 +30,27 @@ export function AuditPagination({
       {previous ? (
         <Link
           href={href(previous)}
-          className="rounded-full border border-mist-gray px-4 py-2 text-caption leading-caption text-slate-gray hover:border-ink-black hover:text-ink-black"
+          className="rounded-full border border-mist-gray px-4 py-2 text-caption leading-caption text-label hover:border-ink-black hover:text-ink-black"
         >
           ← Newer
         </Link>
       ) : (
-        <span className="text-caption leading-caption text-smoke-gray">← Newer</span>
+        <span className="text-caption leading-caption text-subtle">← Newer</span>
       )}
 
-      <span className="text-caption leading-caption text-slate-gray">
+      <span className="text-caption leading-caption text-label">
         Page {result.page} of {result.pageCount}
       </span>
 
       {next ? (
         <Link
           href={href(next)}
-          className="rounded-full border border-mist-gray px-4 py-2 text-caption leading-caption text-slate-gray hover:border-ink-black hover:text-ink-black"
+          className="rounded-full border border-mist-gray px-4 py-2 text-caption leading-caption text-label hover:border-ink-black hover:text-ink-black"
         >
           Older →
         </Link>
       ) : (
-        <span className="text-caption leading-caption text-smoke-gray">Older →</span>
+        <span className="text-caption leading-caption text-subtle">Older →</span>
       )}
     </nav>
   );

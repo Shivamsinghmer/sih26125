@@ -3,12 +3,27 @@ import { redirect } from "next/navigation";
 
 import { KeySignIn } from "@/components/KeySignIn";
 import { LoginForm } from "@/components/LoginForm";
+import { SkyBackdrop } from "@/components/SkyBackdrop";
 import { getSession } from "@/lib/auth-actions";
 import { ROLE_HOME } from "@/lib/auth-types";
 import { accountFor } from "@/lib/people";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The threshold.
+ *
+ * This is the one screen that belongs to both registers: it is still the brand
+ * surface a judge arrives on, and it is already the product. So it keeps the
+ * landing page's sky and takes the console's discipline — the two ways in are
+ * separated as two panels, because they are genuinely different mechanisms and
+ * a visitor picking the wrong one is the failure this page has to prevent.
+ *
+ * The previous version set its secondary text in Steep's slate-gray and
+ * smoke-gray, which measure 4.23:1 and 2.43:1 on white. Those are the tokens
+ * the system specifies for links and tertiary labels, not for the sentences
+ * that explain how to sign in.
+ */
 export default async function LoginPage() {
   const session = await getSession();
   if (session) redirect(ROLE_HOME[session.role]);
@@ -26,66 +41,225 @@ export default async function LoginPage() {
         })();
 
   return (
-    <main className="mx-auto max-w-[860px] px-6 py-16">
-      <Link href="/" className="text-caption leading-caption text-slate-gray hover:text-ink-black">
-        ← BEL Asset Custody
-      </Link>
+    <div className="signin">
+      <SkyBackdrop variant="hero" />
 
-      <h1 className="display-serif mt-8 text-heading leading-heading tracking-heading">
-        Sign in
-      </h1>
-      <p className="mt-3 max-w-[64ch] text-body leading-body text-slate-gray">
-        Signing in decides which screens you can open. It never decides what the
-        chain permits — every state change is still checked by the contracts.
-      </p>
+      <main className="signin__inner">
+        <header className="signin__head">
+          <Link href="/" className="signin__back">
+            ← BEL Asset Custody
+          </Link>
 
-      <div className="mt-12 grid gap-12 md:grid-cols-2">
-        <section>
-          <h2 className="text-subheading leading-subheading">People</h2>
-          <p className="mt-2 text-caption leading-caption text-slate-gray">
-            Prove you hold your key. Your role is then read from the chain, so a
-            revoked credential closes the console too — there is no second place
-            to update.
+          <h1 className="display-serif signin__title">Sign in</h1>
+          <p className="signin__lede">
+            Signing in decides which screens you can open. It never decides what
+            the chain permits — every state change is still checked by the
+            contracts.
           </p>
-          <div className="mt-6">
-            <KeySignIn />
-          </div>
+        </header>
 
-          {demoAdminKey ? (
-            <details className="mt-6">
-              <summary className="cursor-pointer text-caption leading-caption text-smoke-gray">
-                Demo key for the issuing authority
-              </summary>
-              <p className="mt-2 text-caption leading-caption text-smoke-gray">
-                Derived from Hardhat&rsquo;s published development mnemonic, so it
-                is already public and worthless off this chain. Paste it above
-                with any passphrase of 8 characters or more.
-              </p>
-              <p className="mono-addr mt-2 break-all text-slate-gray">{demoAdminKey}</p>
-            </details>
-          ) : null}
-        </section>
+        <div className="signin__ways">
+          {/* A person proves possession of a key. */}
+          <section className="signin__way">
+            <div className="signin__way-head">
+              <h2 className="signin__way-title">A person</h2>
+              <p className="signin__way-sub">key held in this browser</p>
+            </div>
 
-        <section className="md:border-l md:border-mist-gray md:pl-12">
-          <h2 className="text-subheading leading-subheading">Gate terminal</h2>
-          <p className="mt-2 text-caption leading-caption text-slate-gray">
-            A gate post is a device, staffed by whoever is on shift. The terminal
-            is provisioned with its own credential — the way a card reader is
-            today — rather than issuing every guard a personal key to unlock a
-            shared screen.
-          </p>
-          <div className="mt-6">
-            <LoginForm />
-          </div>
-
-          <div className="mt-6 rounded-2xl bg-mist-gray px-5 py-4">
-            <p className="text-caption leading-caption text-slate-gray">
-              Demo terminal
+            <p className="signin__way-body">
+              Prove you hold your key. Your role is then read from the chain, so
+              a revoked credential closes the console with it — there is no
+              second place to update.
             </p>
-            <p className="mono-addr mt-1 text-slate-gray">gate-3 / gate-post-3</p>
-          </div>
-        </section>
-      </div>
-    </main>
+
+            <div className="signin__form">
+              <KeySignIn />
+            </div>
+
+            {demoAdminKey ? (
+              <details className="signin__demo">
+                <summary className="signin__demo-summary">
+                  Demo key for the issuing authority
+                </summary>
+                <p className="signin__demo-body">
+                  Derived from Hardhat&rsquo;s published development mnemonic, so
+                  it is already public and worthless off this chain. Paste it
+                  above with any passphrase of 8 characters or more.
+                </p>
+                <p className="mono-addr signin__demo-key">{demoAdminKey}</p>
+              </details>
+            ) : null}
+          </section>
+
+          {/* A post is provisioned as a device, not as whoever is on shift. */}
+          <section className="signin__way">
+            <div className="signin__way-head">
+              <h2 className="signin__way-title">A gate post</h2>
+              <p className="signin__way-sub">provisioned as a device</p>
+            </div>
+
+            <p className="signin__way-body">
+              A gate post is staffed by whoever is on shift, so the terminal
+              carries its own credential — the way a card reader does today —
+              rather than issuing every guard a personal key to unlock a shared
+              screen.
+            </p>
+
+            <div className="signin__form">
+              <LoginForm />
+            </div>
+
+            <div className="signin__demo signin__demo--static">
+              <p className="signin__demo-summary">Demo terminal</p>
+              <p className="mono-addr signin__demo-key">gate-3 / gate-post-3</p>
+            </div>
+          </section>
+        </div>
+
+        <p className="signin__foot">
+          Bharat Electronics Limited · Ministry of Defence · Problem statement
+          SIH26125
+        </p>
+      </main>
+
+      <style>{`
+        .signin {
+          position: relative;
+          isolation: isolate;
+          min-height: 100vh;
+          min-height: 100svh;
+        }
+
+        .signin__inner {
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: clamp(24px, 4vh, 56px) clamp(20px, 5vw, 48px) 72px;
+        }
+
+        /* ------------------------------------------------------------- head */
+        .signin__back {
+          display: inline-block;
+          font-size: 15px;
+          /* 5.73:1. Steep's slate-gray is 4.23:1 and this sits on a sky. */
+          color: #414755;
+          transition: color 160ms ease-out;
+        }
+        .signin__back:hover { color: #17191c; }
+
+        .signin__title {
+          margin: clamp(20px, 4vh, 40px) 0 0;
+          font-size: clamp(38px, 5.4vw, 62px);
+          line-height: 1.06;
+          letter-spacing: -0.028em;
+          color: #17191c;
+        }
+        .signin__lede {
+          margin: 14px 0 0;
+          max-width: 58ch;
+          font-size: 17px;
+          line-height: 1.55;
+          text-wrap: pretty;
+          color: #414755;
+        }
+
+        /* ------------------------------------------------------------- ways */
+        .signin__ways {
+          display: grid;
+          gap: clamp(20px, 3vw, 28px);
+          margin-top: clamp(28px, 5vh, 48px);
+          align-items: start;
+        }
+        @media (min-width: 880px) {
+          .signin__ways { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* Two panels, because there are genuinely two mechanisms. They are the
+           only cards on the page, so they read as choices rather than as the
+           grid-of-identical-cards reflex. */
+        .signin__way {
+          min-width: 0;
+          padding: clamp(22px, 3vw, 32px);
+          border-radius: 24px;
+          border: 1px solid #e7e7ea;
+          background: #fff;
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.04),
+            0 24px 56px -24px rgba(23, 25, 28, 0.22);
+        }
+
+        .signin__way-head {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 6px 12px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid #f0f0f2;
+        }
+        .signin__way-title {
+          margin: 0;
+          font-family: var(--font-signifier);
+          font-weight: 400;
+          font-size: 24px;
+          line-height: 1.2;
+          letter-spacing: -0.018em;
+          color: #17191c;
+        }
+        .signin__way-sub {
+          margin: 0;
+          font-size: 12.5px;
+          color: #616675;
+        }
+
+        .signin__way-body {
+          margin: 16px 0 0;
+          font-size: 14.5px;
+          line-height: 1.6;
+          text-wrap: pretty;
+          color: #4f5461;
+        }
+
+        .signin__form { margin-top: 20px; }
+
+        /* ------------------------------------------------------------- demo */
+        .signin__demo {
+          margin-top: 20px;
+          padding: 14px 16px;
+          border-radius: 16px;
+          background: #f2f2f3;
+        }
+        .signin__demo--static { padding-bottom: 12px; }
+
+        .signin__demo-summary {
+          margin: 0;
+          font-size: 13px;
+          color: #414755;
+        }
+        details.signin__demo .signin__demo-summary { cursor: pointer; }
+        details.signin__demo[open] .signin__demo-summary { margin-bottom: 8px; }
+
+        .signin__demo-body {
+          margin: 0 0 8px;
+          font-size: 12.5px;
+          line-height: 1.55;
+          color: #4f5461;
+        }
+        .signin__demo-key {
+          margin: 0;
+          word-break: break-all;
+          color: #17191c;
+        }
+
+        .signin__foot {
+          margin: clamp(32px, 5vh, 56px) 0 0;
+          font-size: 13px;
+          color: #4a5060;
+        }
+
+        @media (max-width: 500px) {
+          .signin__way-head { flex-direction: column; align-items: flex-start; }
+        }
+      `}</style>
+    </div>
   );
 }

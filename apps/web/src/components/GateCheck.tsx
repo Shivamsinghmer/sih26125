@@ -39,7 +39,7 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
 
       <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-[320px] flex-1 flex-col gap-2">
-          <span className="text-caption leading-caption text-slate-gray">
+          <span className="text-caption leading-caption text-label">
             Or paste a DID / address
           </span>
           <input
@@ -56,7 +56,7 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
 
       {presets.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-caption leading-caption text-smoke-gray">
+          <span className="text-caption leading-caption text-subtle">
             No scanner to hand? Try:
           </span>
           {presets.map((p) => (
@@ -64,7 +64,7 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
               <input type="hidden" name="identifier" value={p.did} />
               <button
                 type="submit"
-                className="rounded-full border border-mist-gray px-3 py-1.5 text-caption leading-caption text-slate-gray hover:border-ink-black hover:text-ink-black"
+                className="rounded-full border border-mist-gray px-3 py-1.5 text-caption leading-caption text-label hover:border-ink-black hover:text-ink-black"
               >
                 {p.label}
               </button>
@@ -96,7 +96,7 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
                   className="h-20 w-20 rounded-2xl object-cover"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-paper-white text-heading-sm text-smoke-gray">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-paper-white text-heading-sm text-subtle">
                   ?
                 </div>
               )}

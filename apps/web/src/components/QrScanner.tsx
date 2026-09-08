@@ -155,7 +155,7 @@ export function QrScanner({ onResult }: { onResult: (value: string) => void }) {
           </button>
         )}
         {scanning ? (
-          <span className="text-caption leading-caption text-slate-gray">
+          <span className="text-caption leading-caption text-label">
             Hold the card&rsquo;s QR in front of the camera.
           </span>
         ) : null}
