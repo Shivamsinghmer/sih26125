@@ -28,21 +28,6 @@ import {
  * being evidence.
  */
 
-const CAPABILITIES = [
-  {
-    title: "Onboard without handing over a key",
-    body: "A person is registered with a DID and a role credential. Their name and photo stay in Postgres; the chain gets an identifier, a public key and a status flag.",
-  },
-  {
-    title: "Issue and revoke as facts, not rows",
-    body: "A credential carries an expiry and can be withdrawn in one write. There is no permissions table an administrator could quietly edit instead.",
-  },
-  {
-    title: "Print a card that stays true",
-    body: "The QR encodes the DID, so the card points at a live credential. Revoke it and the print is stale the instant the guard scans it.",
-  },
-];
-
 export function FeatureShowcase() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const timeline = useTimeline(sectionRef);
@@ -108,29 +93,18 @@ export function FeatureShowcase() {
           </TimelineItem>
         </div>
 
-        <div className="showcase__split">
+        {/* The section's thesis, and the only centred thing in it: four
+            surfaces above, and underneath them this — one asset's record,
+            refusal included. */}
+        <div className="showcase__closing">
           <TimelineItem order={6} timeline={timeline} as="figure" className="showcase__stack">
             <CustodyStack />
-            <figcaption className="showcase__cap">
+            <figcaption className="showcase__cap showcase__cap--centred">
               <strong>The record itself.</strong> Four entries from one asset,
-              including the transfer that was refused.
+              including the transfer that was refused. Every surface above is
+              reading this, and none of them keeps a copy.
             </figcaption>
           </TimelineItem>
-
-          <ul className="showcase__caps">
-            {CAPABILITIES.map((item, index) => (
-              <TimelineItem
-                key={item.title}
-                order={7 + index}
-                timeline={timeline}
-                as="li"
-                className="showcase__cap-item"
-              >
-                <h3 className="showcase__cap-title">{item.title}</h3>
-                <p className="showcase__cap-body">{item.body}</p>
-              </TimelineItem>
-            ))}
-          </ul>
         </div>
       </div>
 
@@ -182,8 +156,7 @@ export function FeatureShowcase() {
 
         /* 8px rhythm: 24-32 inside groups, 48-72 between groups. */
         .showcase__lead-row,
-        .showcase__pair,
-        .showcase__split {
+        .showcase__pair {
           display: grid;
           gap: clamp(28px, 3.5vw, 44px);
           margin-top: clamp(36px, 4.5vw, 60px);
@@ -193,8 +166,17 @@ export function FeatureShowcase() {
           /* Lead feature ~2x the supporting card. */
           .showcase__lead-row { grid-template-columns: minmax(0, 1.95fr) minmax(0, 1fr); }
           .showcase__pair { grid-template-columns: 1fr 1fr; }
-          .showcase__split { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 56px; }
         }
+
+        /* Centred, and the only thing on the page that is. The four surfaces
+           read left-to-right in their grid; the record they share sits under
+           the middle of them. */
+        .showcase__closing {
+          display: grid;
+          justify-items: center;
+          margin-top: clamp(48px, 6vw, 80px);
+        }
+        .showcase__stack { width: 100%; max-width: 720px; }
 
         .showcase__lead,
         .showcase__support-fig,
@@ -209,31 +191,10 @@ export function FeatureShowcase() {
           color: #616675;
         }
         .showcase__cap strong { color: #17191c; font-weight: 500; }
-
-        .showcase__caps {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-          display: flex;
-          flex-direction: column;
-        }
-        .showcase__cap-item {
-          padding: 24px 0;
-          border-top: 1px solid #e7e7ea;
-        }
-        .showcase__cap-item:first-child { border-top: 0; padding-top: 0; }
-        .showcase__cap-title {
-          margin: 0;
-          font-size: 17px;
-          line-height: 1.35;
-          color: #17191c;
-        }
-        .showcase__cap-body {
-          margin: 6px 0 0;
-          font-size: 15px;
-          line-height: 1.6;
-          text-wrap: pretty;
-          color: #616675;
+        .showcase__cap--centred {
+          max-width: 54ch;
+          margin-inline: auto;
+          text-align: center;
         }
       `}</style>
     </section>

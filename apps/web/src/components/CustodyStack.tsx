@@ -144,7 +144,9 @@ export function CustodyStack() {
 
         .stack__event {
           font-size: 13px;
-          color: var(--color-slate-gray, #777b86);
+          /* Steep's slate-gray is specified for links and tertiary labels; at
+             13px on white it measures 4.23:1, under the floor for text. */
+          color: #616675;
         }
         .stack__card[data-refusal="true"] .stack__event { color: #7a4230; }
 

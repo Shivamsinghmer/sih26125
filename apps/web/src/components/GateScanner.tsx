@@ -226,17 +226,21 @@ export function GateScanner() {
           </div>
         </div>
 
-        {/* The reader slot, with a card held in it. */}
+        {/* The reader slot, with a card held in it. The aperture clips the
+            card; the mouth marks where it was clipped. */}
         <div className="scan__slot" aria-hidden="true">
-          <div className="scan__card">
-            <span className="scan__card-photo" />
-            <span className="scan__card-lines">
-              <span className="scan__card-line scan__card-line--wide" />
-              <span className="scan__card-line" />
-            </span>
-            <span className="scan__card-qr" />
+          <div className="scan__aperture">
+            <div className="scan__card">
+              <span className="scan__card-photo" />
+              <span className="scan__card-lines">
+                <span className="scan__card-line scan__card-line--wide" />
+                <span className="scan__card-line" />
+              </span>
+              <span className="scan__card-qr" />
+            </div>
+            <span className="scan__beam" data-on={reading} />
           </div>
-          <span className="scan__beam" data-on={reading} />
+          <span className="scan__mouth" />
         </div>
       </div>
 
@@ -481,13 +485,27 @@ export function GateScanner() {
         .scan__reading-label { font-size: 12.5px; color: #616675; }
 
         /* ---------------------------------------------------------- the card */
-        /* The aperture. Its lower edge clips the card, which is what makes the
-           card read as sitting *in* the reader rather than floating on it. */
+        /* The slot: an aperture that clips the card, a mouth that marks the
+           cut, and device body beneath. All three are needed. Clipped with
+           nothing to mark the cut, the card read as a mockup running off the
+           bottom of the frame rather than as card stock sunk into a reader. */
         .scan__slot {
-          position: relative;
           margin-top: clamp(6px, 1vh, 14px);
-          padding: clamp(7px, 1vh, 14px) 6px 0;
+          padding: clamp(7px, 1vh, 14px) 6px clamp(5px, 0.7vh, 10px);
+        }
+        .scan__aperture {
+          position: relative;
           overflow: hidden;
+        }
+        /* The slot edge casts a shadow across the stock going into it. Without
+           it the card is evenly lit right up to the cut, which is what a
+           truncated image looks like. */
+        .scan__aperture::after {
+          content: "";
+          position: absolute;
+          inset: auto 0 0;
+          height: 12px;
+          background: linear-gradient(rgba(23, 25, 28, 0), rgba(23, 25, 28, 0.3));
         }
         .scan__card {
           /* Card proportions, not a full-width bar. At full width the photo and
@@ -498,11 +516,27 @@ export function GateScanner() {
           display: flex;
           align-items: center;
           gap: 9px;
-          padding: 7px 11px 14px;
           border-radius: 9px 9px 3px 3px;
           background: #f2f2f3;
-          /* Sunk into the reader; the slot's overflow hides the lower edge. */
-          transform: translateY(12px);
+          /* How much of the card the reader has swallowed. It is added to the
+             bottom padding as well as translated, so the visible card is the
+             same height whatever the depth: blank stock below the row, and the
+             cut never falls through the photo or the QR — sliced mid-block, it
+             looked like a rendering fault. */
+          --card-sunk: 16px;
+          padding: 7px 11px calc(5px + var(--card-sunk));
+          transform: translateY(var(--card-sunk));
+        }
+        /* The cut itself: darker than the device body, with its lower lip
+           catching the light, the way a moulded slot does. */
+        .scan__mouth {
+          display: block;
+          width: calc(min(212px, 74%) + 10px);
+          height: 4px;
+          margin: 0 auto;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+          border-radius: 0 0 1px 1px;
+          background: #000;
         }
         .scan__card-photo {
           width: 20px;
@@ -543,7 +577,7 @@ export function GateScanner() {
           left: 50%;
           width: min(212px, 74%);
           transform: translateX(-50%);
-          top: 14px;
+          top: 10px;
           height: 2px;
           border-radius: 2px;
           background: #fbe1d1;
@@ -578,9 +612,11 @@ export function GateScanner() {
           .scan__read { padding: clamp(9px, 1.2vh, 18px) 20px clamp(9px, 1.2vh, 20px); }
           .scan__verdict { padding: 3px 11px; }
           .scan__cred { margin-top: clamp(5px, 0.7vh, 12px); }
-          .scan__card { padding: 5px 10px 10px; transform: translateY(14px); }
-          .scan__slot { margin-top: clamp(4px, 0.7vh, 14px); padding: clamp(5px, 0.8vh, 14px) 6px 0; }
-          .scan__card { padding: 6px 11px 12px; }
+          .scan__slot {
+            margin-top: clamp(4px, 0.7vh, 14px);
+            padding: clamp(5px, 0.8vh, 14px) 6px clamp(4px, 0.6vh, 10px);
+          }
+          .scan__card { --card-sunk: 14px; padding: 6px 11px calc(4px + var(--card-sunk)); }
           .scan__reason { margin-top: clamp(6px, 0.9vh, 14px); padding: clamp(7px, 1vh, 12px) 14px; }
           .scan__consequence { margin-top: clamp(6px, 0.8vh, 12px); }
           .scan__name { margin-top: clamp(6px, 0.8vh, 13px); }
@@ -590,8 +626,8 @@ export function GateScanner() {
         /* 768-tall laptops are the tightest common case. */
         @media (max-height: 810px) and (min-width: 760px) {
           .scan__read { padding: 8px 18px 8px; }
-          .scan__slot { margin-top: 3px; padding: 4px 6px 0; }
-          .scan__card { padding: 4px 10px 10px; }
+          .scan__slot { margin-top: 3px; padding: 4px 6px 4px; }
+          .scan__card { --card-sunk: 12px; padding: 5px 10px calc(4px + var(--card-sunk)); }
           .scan__detail { line-height: 1.45; }
           .scan__reason { margin-top: 6px; padding: 6px 12px; }
         }

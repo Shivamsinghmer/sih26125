@@ -22,7 +22,7 @@ function Chrome({ label }: { label: string }) {
         <span className="h-2 w-2 rounded-full bg-[#e2e2e6]" />
         <span className="h-2 w-2 rounded-full bg-[#e2e2e6]" />
       </span>
-      <span className="ml-1 font-mono text-[10px] tracking-tight text-[#8a8f99]">{label}</span>
+      <span className="ml-1 font-mono text-[10px] tracking-tight text-[#616675]">{label}</span>
     </div>
   );
 }
@@ -48,13 +48,13 @@ export function DashboardMockup() {
             <div key={s.label} className="rounded-xl bg-[#f2f2f3] px-3 py-3">
               <p className="text-[10px] text-[#616675]">{s.label}</p>
               <p className="font-serif text-[22px] leading-none text-[#17191c]">{s.value}</p>
-              <p className="mt-1.5 text-[9px] leading-tight text-[#6f7482]">{s.hint}</p>
+              <p className="mt-1.5 text-[9px] leading-tight text-[#616675]">{s.hint}</p>
             </div>
           ))}
         </div>
 
         <div className="mt-5">
-          <div className="grid grid-cols-[auto_1fr_auto] gap-3 border-b border-[#f0f0f2] pb-2 text-[10px] text-[#8a8f99]">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-3 border-b border-[#f0f0f2] pb-2 text-[10px] text-[#616675]">
             <span>Asset</span>
             <span>Held by</span>
             <span>Requires</span>
@@ -92,7 +92,7 @@ export function GateMockup() {
           <span className="rounded-full bg-[#17191c] px-3 py-1.5 text-[10px] text-white">
             Scan with camera
           </span>
-          <span className="flex-1 rounded-lg border border-[#e7e7ea] px-2.5 py-1.5 font-mono text-[9px] text-[#a3a6af]">
+          <span className="flex-1 rounded-lg border border-[#e7e7ea] px-2.5 py-1.5 font-mono text-[9px] text-[#6f7482]">
             did:ethr:0x7a69:0x7099…
           </span>
         </div>
@@ -145,7 +145,7 @@ export function AuditMockup() {
           <span className="rounded-lg border border-[#e7e7ea] px-2.5 py-1.5 text-[10px] text-[#17191c]">
             All events ▾
           </span>
-          <span className="flex-1 rounded-lg border border-[#e7e7ea] px-2.5 py-1.5 text-[10px] text-[#a3a6af]">
+          <span className="flex-1 rounded-lg border border-[#e7e7ea] px-2.5 py-1.5 text-[10px] text-[#6f7482]">
             Search the record
           </span>
         </div>
@@ -157,8 +157,8 @@ export function AuditMockup() {
               key={r.t}
               className="grid grid-cols-[38px_86px_1fr] items-baseline gap-2 border-t border-[#f2f2f3] py-2.5"
             >
-              <span className="tabular-nums text-[9px] text-[#8a8f99]">{r.t}</span>
-              <span className="text-[9px] text-[#8a8f99]">{r.c}</span>
+              <span className="tabular-nums text-[9px] text-[#616675]">{r.t}</span>
+              <span className="text-[9px] text-[#616675]">{r.c}</span>
               <span
                 className={`text-[11px] leading-snug ${r.accent ? "text-[#5d2a1a]" : "text-[#17191c]"}`}
               >
@@ -185,7 +185,7 @@ export function CardMockup() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#f2f2f3] font-serif text-[16px] text-[#8a8f99]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#f2f2f3] font-serif text-[16px] text-[#616675]">
             P
           </div>
           <div className="min-w-0 flex-1">
@@ -208,7 +208,7 @@ export function CardMockup() {
           />
         </div>
 
-        <p className="text-[6.5px] text-[#a3a6af]">
+        <p className="text-[7px] text-[#6f7482]">
           Scan to verify — the QR is the source of truth, not this print
         </p>
       </div>

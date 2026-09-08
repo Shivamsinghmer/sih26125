@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ContractExcerpt } from "@/components/ContractExcerpt";
 import { FeatureShowcase } from "@/components/FeatureShowcase";
 import { GateScanner } from "@/components/GateScanner";
 import { getSession } from "@/lib/auth-actions";
@@ -46,6 +47,37 @@ const DEMO_STEPS = [
     step: "Replay",
     title: "A record that cannot disagree with itself",
     body: "The audit trail is not a log about the transactions. It is the transactions, reconstructed from chain events with no database consulted — so there is no second version to reconcile.",
+  },
+];
+
+/**
+ * The two operated surfaces, set as a specification rather than as prose. Every
+ * cell is a claim the shipped app already makes; the shared row is the point of
+ * the section.
+ */
+const SURFACE_SPEC = [
+  {
+    property: "Provisioned as",
+    authority: "A person, whose console role is read from the chain.",
+    gate: "A post rather than a person — staffed by whoever is on shift.",
+  },
+  {
+    property: "Can",
+    authority:
+      "Onboard identities, issue and revoke credentials, register assets, replay the whole history.",
+    gate: "Ask one question: is this credential valid right now.",
+  },
+  {
+    property: "Cannot",
+    authority:
+      "Move an asset to someone without a valid credential. The contract refuses the console like anything else.",
+    gate: "Write. It reads, and holds no credential of its own.",
+  },
+  {
+    property: "Loses access when",
+    authority:
+      "Their own credential is revoked — one write closes the console with it.",
+    gate: "The post is stood down. Nothing personal was ever issued to it.",
   },
 ];
 
@@ -201,57 +233,58 @@ export default async function LandingPage() {
               How the refusal works
             </a>
           </div>
-
-          {/* A colophon, not a stats grid: four facts a procurement reader
-              checks for, set at reading size and stated flatly. */}
-          <ul className="landing__spec">
-            <li>Hyperledger Besu · QBFT</li>
-            <li>W3C Verifiable Credentials</li>
-            <li>No personal data on chain</li>
-            <li>Tamper-evident audit replay</li>
-            <li>Verifies offline</li>
-          </ul>
         </section>
 
         <section className="landing__stage" aria-label="The gate reader in use">
           <GateScanner />
         </section>
 
-        <section id="mechanism" className="mkt-section">
-          <h2 className="mkt-title">
-            Identity platforms stop at the credential. Token standards stop at the
-            transfer.
-          </h2>
-          <div className="mkt-content landing__two-col">
-            <p className="mkt-body">
-              This joins them. Every movement of an asset calls into the role
-              registry and reverts if the receiver&rsquo;s credential is missing,
-              expired or revoked — a check that lives in{" "}
-              <code>AssetToken._update</code>, the hook every ERC-721 transfer is
-              forced through.
-            </p>
-            <p className="mkt-body mkt-body--muted">
-              Because it sits there rather than in an interface, it holds for this
-              console, for a script, and for any client anyone writes later. That
-              is the difference between a permission and a rule.
-            </p>
+        {/* The claim and its proof on one row. The page's first principle is
+            to show the mechanism rather than assert it, and the mechanism is
+            twenty lines of Solidity — so they are on the page. */}
+        <section id="mechanism" className="mkt-section landing__mechanism">
+          <div className="landing__mech">
+            <div className="landing__mech-claim">
+              <h2 className="mkt-title">
+                Identity platforms stop at the credential. Token standards stop
+                at the transfer.
+              </h2>
+              <p className="mkt-body landing__mech-body">
+                This joins them. Every movement of an asset calls into the role
+                registry and reverts if the receiver&rsquo;s credential is
+                missing, expired or revoked.
+              </p>
+              <p className="mkt-body mkt-body--muted landing__mech-body">
+                Because the check sits in the contract rather than in an
+                interface, it holds for this console, for a script, and for any
+                client anyone writes later. That is the difference between a
+                permission and a rule.
+              </p>
+            </div>
+
+            <ContractExcerpt />
           </div>
         </section>
 
-        {/* A genuine sequence, so the numbering carries information. */}
-        <section className="mkt-section">
+        {/* A genuine sequence, so the numbering carries information, and a
+            rail so the eye reads it as one. The third move used to sit in a
+            peach card, which broke the very grid that made it a sequence — it
+            now takes its weight from a filled node and ink body copy instead. */}
+        <section className="mkt-section mkt-section--band">
           <h2 className="mkt-title">Five minutes, in five moves</h2>
           <ol className="mkt-content landing__steps">
             {DEMO_STEPS.map((item, index) => (
               <li
                 key={item.step}
-                className={`landing__step${item.emphasis ? " landing__step--emphasis" : ""}`}
+                className="landing__step"
+                data-emphasis={item.emphasis ? "true" : undefined}
               >
+                <span className="landing__step-node" aria-hidden="true" />
                 <p className="landing__step-index">
                   <span className="tabular">{index + 1}</span>
                   <span className="landing__step-name">{item.step}</span>
                 </p>
-                <div>
+                <div className="landing__step-main">
                   <h3 className="landing__step-title">{item.title}</h3>
                   <p className="landing__step-body">{item.body}</p>
                 </div>
@@ -262,43 +295,78 @@ export default async function LandingPage() {
 
         <FeatureShowcase />
 
-        <section className="mkt-section">
+        {/* Two paragraphs of prose asked a procurement reader to hold the
+            comparison in their head. A specification does the holding: the two
+            surfaces line up column by column, and the last row is the only
+            thing they have in common. */}
+        <section className="mkt-section mkt-section--band landing__jobs">
           <h2 className="mkt-title">Two jobs that share nothing</h2>
-          <div className="mkt-content landing__surface-grid">
-            <article>
-              <h3 className="landing__surface-title">The issuing authority</h3>
-              <p className="mkt-body">
-                IT Security and Internal Audit onboard people, issue and revoke
-                credentials, register assets and replay the entire history. Their
-                console role is read from the chain, so revoking someone&rsquo;s
-                credential closes their console with it — there is no second place
-                to remember.
-              </p>
-            </article>
 
-            <article>
-              <h3 className="landing__surface-title">The gate</h3>
-              <p className="mkt-body">
-                A guard scans the DID on a printed card and gets one answer: is
-                this credential valid right now. Read-only, and provisioned as a
-                device rather than a person — a gate post is staffed by whoever is
-                on shift.
-              </p>
-            </article>
+          <div className="mkt-content">
+            <table className="landing__spec" role="table">
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader" className="landing__spec-corner">
+                    <span className="landing__spec-hidden">Property</span>
+                  </th>
+                  <th scope="col" role="columnheader">The issuing authority</th>
+                  <th scope="col" role="columnheader">The gate</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                {SURFACE_SPEC.map((row) => (
+                  <tr key={row.property} role="row">
+                    <th scope="row" role="rowheader">{row.property}</th>
+                    <td role="cell" data-col="The issuing authority">{row.authority}</td>
+                    <td role="cell" data-col="The gate">{row.gate}</td>
+                  </tr>
+                ))}
+                <tr role="row" className="landing__spec-shared">
+                  <th scope="row" role="rowheader">Reads from</th>
+                  <td role="cell" colSpan={2}>
+                    Contract state — at request time in the console, at scan time
+                    at the gate. Neither of them keeps a copy, which is the only
+                    reason they can never disagree.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p className="landing__note">
+              Signing in decides which screens open. It never decides what the
+              chain permits: a compromised session still cannot move an asset to
+              someone without a valid credential, because that check is not in
+              the session.
+            </p>
           </div>
-
-          <p className="landing__note">
-            Signing in decides which screens open. It never decides what the chain
-            permits: a compromised session still cannot move an asset to someone
-            without a valid credential, because that check is not in the session.
-          </p>
         </section>
 
+        {/* The page ended on an aphorism with nowhere to go, and with half the
+            dark panel empty. The line keeps its place; the other half now
+            carries the ask. */}
         <section className="landing__close">
-          <p className="display-serif landing__close-line">
-            Ownership, permission and history become one cryptographic object
-            that no administrator can rewrite.
-          </p>
+          <div className="landing__close-grid">
+            <p className="display-serif landing__close-line">
+              Ownership, permission and history become one cryptographic object
+              that no administrator can rewrite.
+            </p>
+
+            <div className="landing__close-side">
+              <p className="landing__close-lede">
+                Three sign-ins — issuing authority, gate security, internal audit
+                — reading one chain. Take any of them and try to move an asset
+                you are not credentialled for.
+              </p>
+              <div className="landing__close-actions">
+                <Link href="/login" className="landing__close-cta">
+                  {session ? "Switch account" : "Sign in to the console"}
+                </Link>
+                <a href="#mechanism" className="landing__close-ghost">
+                  Read the check
+                </a>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 
@@ -318,6 +386,7 @@ export default async function LandingPage() {
         .landing-shell {
           position: relative;
           isolation: isolate;
+          overflow-x: clip;
         }
 
         /* Spans the shell, which is already full body width. An earlier version
@@ -479,7 +548,10 @@ export default async function LandingPage() {
            impeccable ceiling is 96px, and above that a page is shouting. */
         .landing__headline {
           margin: clamp(10px, 1.7vh, 26px) 0 0;
-          max-width: 19ch;
+          /* Wide enough that balance splits the sentence in two — at 19ch it
+             broke into three, and the third line was two words long. The
+             measure is in ch, so the split holds at every size in the clamp. */
+          max-width: 28ch;
           /* min() so the smaller of the two constraints wins: a wide but short
              laptop screen gets the size its height can afford. */
           font-size: clamp(34px, min(6vw, 5.2vh), 74px);
@@ -505,21 +577,6 @@ export default async function LandingPage() {
           margin-top: clamp(14px, 2.1vh, 32px);
         }
 
-        /* No separators. Four facts fit one line on a wide viewport and wrap to
-           two on a phone; a dot-separated list puts a leading dot at the start
-           of the wrapped line, which reads as a typo. */
-        .landing__spec {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 8px clamp(20px, 3vw, 40px);
-          margin: clamp(12px, 1.9vh, 34px) 0 0;
-          padding: 0;
-          list-style: none;
-          font-size: 13.5px;
-          color: var(--mkt-faint);
-        }
-
         /* Keeps the section's rule off the very top edge when it is scrolled
            to from the hero link. */
         #mechanism { scroll-margin-top: 16px; }
@@ -535,45 +592,128 @@ export default async function LandingPage() {
           .landing__actions { margin-top: clamp(10px, 1.6vh, 32px); }
           .landing__cta--lg { padding: 10px 22px; font-size: 16px; }
           .landing__ghost { padding: 9px 21px; font-size: 16px; }
-          .landing__spec {
-            margin-top: clamp(9px, 1.4vh, 34px);
-            padding-top: clamp(9px, 1.3vh, 18px);
-          }
         }
 
         /* --------------------------------------------------------- the stage */
         .landing__stage { margin-top: clamp(4px, 1.2vh, 20px); }
 
         /* -------------------------------------------------------- content */
-        .landing__two-col { display: grid; gap: 20px; }
-        @media (min-width: 860px) {
-          .landing__two-col { grid-template-columns: 1fr 1fr; gap: 40px; }
+        /* A full-bleed tone band. The container is 1180px wide, so the band is
+           pulled out to the viewport and the shell clips what spills. Where a
+           band runs, the section's rule comes off — two separators doing one
+           job read as an accident, not as rhythm. */
+        .mkt-section--band {
+          /* The faint grey is specified against white and measures 4.48:1 on
+             this tone — under the bar by a hair. Re-pointed within the band the
+             same way the hero re-points its ramp over the sky photograph. */
+          --mkt-faint: #6b7080;
+          border-top: 0;
+          /* Not a full rhythm unit: the following section brings its own top
+             margin, and two of them stacked left the tone floating below the
+             content it was meant to hold. */
+          padding-bottom: clamp(48px, 6vw, 84px);
+        }
+        .mkt-section--band::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          inset: 0 auto 0 50%;
+          width: 100vw;
+          margin-left: -50vw;
+          background: #fafafb;
         }
 
-        .landing__steps { list-style: none; padding: 0; }
-        .landing__step {
+        /* ------------------------------------------------------ mechanism */
+        .landing__mech {
           display: grid;
-          gap: 8px 28px;
-          padding: 26px 0;
-          border-top: 1px solid var(--mkt-rule);
+          gap: clamp(32px, 4vw, 56px);
+          align-items: start;
         }
-        .landing__step:first-child { border-top: 0; padding-top: 0; }
-        @media (min-width: 760px) {
-          .landing__step { grid-template-columns: 168px minmax(0, 1fr); }
+        @media (min-width: 1000px) {
+          /* The excerpt takes the wider half: its measure is set by the source
+             it quotes, while the claim beside it reads better narrow. */
+          .landing__mech { grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); }
+        }
+        .landing__mech-body { margin-top: clamp(18px, 2.2vw, 28px); }
+
+        /* ---------------------------------------------------------- moves */
+        .landing__steps {
+          --step-pad: clamp(18px, 2vw, 26px);
+          position: relative;
+          list-style: none;
+          padding: 0;
         }
 
-        .landing__step--emphasis {
-          background: #fbe1d1;
-          border-radius: 20px;
-          border-top-color: transparent;
-          padding: 28px clamp(20px, 3vw, 30px);
-          margin: 8px 0;
+        /* The spine. One line for the whole sequence, masked at both ends so it
+           arrives and leaves rather than stopping dead against the first and
+           last node. */
+        .landing__steps::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 5px;
+          width: 1px;
+          background: #cfd2d8;
+          -webkit-mask-image: linear-gradient(
+            to bottom, transparent 0, #000 46px, #000 calc(100% - 46px), transparent 100%
+          );
+          mask-image: linear-gradient(
+            to bottom, transparent 0, #000 46px, #000 calc(100% - 46px), transparent 100%
+          );
         }
-        .landing__step--emphasis + .landing__step { border-top-color: transparent; }
-        .landing__step--emphasis .landing__step-index,
-        .landing__step--emphasis .landing__step-name,
-        .landing__step--emphasis .landing__step-title { color: #5d2a1a; }
-        .landing__step--emphasis .landing__step-body { color: #5d2a1a; opacity: 0.86; }
+
+        .landing__step {
+          position: relative;
+          display: grid;
+          gap: 8px 20px;
+          padding: var(--step-pad) 0 var(--step-pad) 34px;
+        }
+        @media (min-width: 760px) {
+          /* Wide enough for the longest label and no wider. At 150px the
+             number floated in its own empty column, which read as a gap
+             rather than as a margin. */
+          .landing__step { grid-template-columns: 108px minmax(0, 1fr); }
+        }
+
+        .landing__step-node {
+          position: absolute;
+          left: 0;
+          top: calc(var(--step-pad) + 4px);
+          width: 11px;
+          height: 11px;
+          border-radius: 50%;
+          background: #fafafb;
+          box-shadow: inset 0 0 0 1px #b6bac3;
+        }
+
+        /* The one move that is the whole argument. It used to be a peach card
+           dropped into the list, which pushed its own row off the grid that
+           made the list a sequence. The weight now comes from a filled node,
+           ink body copy and the air around it — the grid stays intact. */
+        .landing__step[data-emphasis="true"] {
+          padding-top: calc(var(--step-pad) + 14px);
+          padding-bottom: calc(var(--step-pad) + 14px);
+        }
+        /* The spine darkens for the length of the move that is the argument.
+           A filled node alone was too quiet among five; the rail carrying ink
+           through one row says the mechanism engages here, and says it in the
+           material the section is already made of. */
+        .landing__step[data-emphasis="true"]::before {
+          content: "";
+          position: absolute;
+          left: 5px;
+          top: 0;
+          bottom: 0;
+          width: 1px;
+          background: var(--mkt-ink);
+        }
+        .landing__step[data-emphasis="true"] .landing__step-node {
+          background: var(--mkt-ink);
+          box-shadow: 0 0 0 4px #fafafb;
+        }
+        .landing__step[data-emphasis="true"] .landing__step-name { font-weight: 480; }
+        .landing__step[data-emphasis="true"] .landing__step-body { color: var(--mkt-ink); }
 
         .landing__step-index {
           display: flex;
@@ -585,6 +725,7 @@ export default async function LandingPage() {
         }
         .landing__step-name { color: var(--mkt-ink); }
 
+        .landing__step-main { min-width: 0; }
         .landing__step-title { margin: 0; font-size: 21px; line-height: 1.3; }
         .landing__step-body {
           margin: 8px 0 0;
@@ -595,14 +736,102 @@ export default async function LandingPage() {
           color: var(--mkt-muted);
         }
 
-        .landing__surface-grid { display: grid; gap: 28px; }
-        @media (min-width: 860px) {
-          .landing__surface-grid { grid-template-columns: 1.35fr 1fr; gap: 56px; }
+        /* ----------------------------------------------------------- spec */
+        /* A specification, not two columns of prose: the reader compares along
+           a row instead of holding one paragraph in their head while reading
+           the other. */
+        .landing__spec {
+          width: 100%;
+          /* Fixed, so the two surfaces get equal room. Auto layout sized them
+             by how much text each happened to carry, which made the comparison
+             look weighted before it was read. */
+          table-layout: fixed;
+          border-collapse: collapse;
+          text-align: left;
         }
-        .landing__surface-title { margin: 0 0 10px; font-size: 21px; }
+        .landing__spec-hidden {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+        .landing__spec th,
+        .landing__spec td {
+          padding: 20px 28px 20px 0;
+          vertical-align: top;
+          border-top: 1px solid var(--mkt-rule);
+          font-weight: 400;
+        }
+        .landing__spec thead th {
+          padding-top: 0;
+          padding-bottom: 16px;
+          border-top: 0;
+          font-size: 20px;
+          letter-spacing: -0.012em;
+          color: var(--mkt-ink);
+        }
+        .landing__spec-corner { width: 168px; }
+        .landing__spec th + th,
+        .landing__spec td { width: auto; }
+        .landing__spec th:last-child,
+        .landing__spec td:last-child { padding-right: 0; }
+        .landing__spec tbody th {
+          font-size: 14px;
+          color: var(--mkt-faint);
+        }
+        .landing__spec tbody td {
+          font-size: 15.5px;
+          line-height: 1.6;
+          text-wrap: pretty;
+          color: var(--mkt-muted);
+        }
+
+        /* The last row is the section's point: the two columns finally say one
+           thing, so they become one cell under a rule dark enough to read as a
+           join rather than as another divider. */
+        .landing__spec-shared th,
+        .landing__spec-shared td {
+          padding-top: 22px;
+          border-top: 1px solid var(--mkt-ink);
+        }
+        .landing__spec-shared td {
+          max-width: 68ch;
+          font-size: 16px;
+          color: var(--mkt-ink);
+        }
+
+        @media (max-width: 760px) {
+          /* Three columns do not survive a phone. The table restacks into
+             labelled blocks and keeps its semantics. */
+          .landing__spec,
+          .landing__spec tbody,
+          .landing__spec tr,
+          .landing__spec th,
+          .landing__spec td { display: block; width: auto; }
+          .landing__spec thead { display: none; }
+          .landing__spec tr {
+            padding: 22px 0;
+            border-top: 1px solid var(--mkt-rule);
+          }
+          .landing__spec tbody tr:first-child { border-top: 0; padding-top: 0; }
+          .landing__spec th,
+          .landing__spec td { padding: 0; border-top: 0; }
+          .landing__spec tbody td { margin-top: 10px; }
+          .landing__spec tbody td::before {
+            content: attr(data-col);
+            display: block;
+            margin-bottom: 2px;
+            font-size: 13px;
+            color: var(--mkt-ink);
+          }
+          .landing__spec-corner { width: auto; }
+          .landing__spec tr.landing__spec-shared { border-top-color: var(--mkt-ink); }
+        }
 
         .landing__note {
-          margin: 36px 0 0;
+          margin: clamp(32px, 4vw, 48px) 0 0;
           max-width: 70ch;
           font-size: 15px;
           line-height: 1.6;
@@ -610,20 +839,87 @@ export default async function LandingPage() {
         }
 
         /* ---------------------------------------------------------- close */
+        /* The only dark surface in the system, so it is the page's full stop.
+           It used to hold one line against half a panel of empty ink; the line
+           keeps its place and the other half now carries the ask. */
         .landing__close {
           margin-top: var(--mkt-rhythm);
-          padding: clamp(40px, 6vw, 72px) clamp(24px, 4vw, 56px);
+          padding: clamp(40px, 6vw, 76px) clamp(24px, 4vw, 60px);
           border-radius: 24px;
           background: var(--mkt-ink);
         }
+        .landing__close-grid {
+          display: grid;
+          gap: clamp(32px, 4vw, 48px);
+        }
+        @media (min-width: 920px) {
+          .landing__close-grid {
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+            gap: clamp(48px, 6vw, 88px);
+          }
+        }
         .landing__close-line {
           margin: 0;
-          max-width: 22ch;
+          max-width: 23ch;
           font-size: clamp(26px, 3.4vw, 44px);
           line-height: 1.22;
           letter-spacing: -0.022em;
           text-wrap: balance;
           color: #fff;
+        }
+
+        /* Bottom-aligned against the serif line's top-left: the panel reads as
+           one composition with two ends rather than as two stacked blocks. */
+        .landing__close-side {
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          gap: 22px;
+        }
+        .landing__close-lede {
+          margin: 0;
+          max-width: 44ch;
+          font-size: 15.5px;
+          line-height: 1.62;
+          text-wrap: pretty;
+          color: rgba(255, 255, 255, 0.76);
+        }
+        .landing__close-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        /* The pill pair, inverted for ink. Same geometry as the hero's, so the
+           page opens and closes on the same control. */
+        .landing__close-cta,
+        .landing__close-ghost {
+          display: inline-flex;
+          align-items: center;
+          border-radius: 999px;
+          padding: 11px 24px;
+          font-size: 16px;
+          transition: background-color 160ms ease-out, color 160ms ease-out;
+        }
+        .landing__close-cta {
+          background: #fff;
+          color: var(--mkt-ink);
+        }
+        .landing__close-cta:hover { background: #e7e7ea; }
+        .landing__close-ghost {
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          color: #fff;
+        }
+        .landing__close-ghost:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.7);
+        }
+        /* The browser's default ring is drawn in the page's own dark ink here,
+           which is invisible against the panel. */
+        .landing__close-cta:focus-visible,
+        .landing__close-ghost:focus-visible {
+          outline: 2px solid #fff;
+          outline-offset: 3px;
         }
 
         /* ----------------------------------------------------------- foot */
