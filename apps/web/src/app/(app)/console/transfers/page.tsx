@@ -1,6 +1,7 @@
 import { PageHeading } from "@/components/PageHeading";
 import { TransferPanel, type AssetOption, type PersonaOption } from "@/components/TransferPanel";
 import { loadPeople, personaByAddress } from "@/lib/chain";
+import { describeAsset, equipmentByToken, loadEquipment } from "@/lib/equipment";
 import { loadConsoleState } from "@/lib/state";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,12 @@ export const dynamic = "force-dynamic";
  * what happens on this page.
  */
 export default async function TransfersPage() {
-  const [state, people] = await Promise.all([loadConsoleState(), loadPeople()]);
+  const [state, people, equipment] = await Promise.all([
+    loadConsoleState(),
+    loadPeople(),
+    loadEquipment(),
+  ]);
+  const byToken = equipmentByToken(equipment);
 
   const personaOptions: PersonaOption[] =
     state?.personas.map((p) => ({
@@ -22,6 +28,8 @@ export default async function TransfersPage() {
   const assetOptions: AssetOption[] =
     state?.assets.map((a) => ({
       tokenId: a.tokenId.toString(),
+      name: describeAsset(byToken, a)?.name ?? null,
+      serial: describeAsset(byToken, a)?.serial ?? null,
       ownerId: personaByAddress(people, a.owner)?.id ?? null,
       requiredRoleLabel: a.requiredRoleLabel,
     })) ?? [];

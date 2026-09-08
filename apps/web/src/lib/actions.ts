@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Hex } from "viem";
+import { parseEventLogs, type Hex } from "viem";
 
 import { assetTokenAbi, explainContractError, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
 import { Role, didFromAddress } from "@sih26125/identity";
 
 import { MAX_PHOTO_BYTES, type ActionResult } from "./action-types";
+import { metadataHashFor, recordEquipment } from "./equipment";
 import {
   accountFor,
   addPerson,
@@ -19,6 +20,9 @@ import {
   walletFor,
   type Persona,
 } from "./chain";
+
+/** The item the demo opens on, and the one the landing page names. */
+const SEED_EQUIPMENT = { name: "Signal Analyser", serial: "SN-8823" };
 
 const DAY = 86_400;
 const now = () => Math.floor(Date.now() / 1000);
@@ -195,11 +199,33 @@ export async function seedDemo(): Promise<ActionResult> {
       expiry,
     ]);
 
-    return send(admin, deployment.contracts.AssetToken, assetTokenAbi, "mint", [
-      manager.address,
-      Role.Manager,
-      `0x${"a3".repeat(32)}`,
-    ]);
+    // The seeded item is named, because the landing page advertises a Signal
+    // Analyser and a console that opens on "Item #1" makes the demo look like
+    // two different products.
+    const receipt = await send(
+      admin,
+      deployment.contracts.AssetToken,
+      assetTokenAbi,
+      "mint",
+      [manager.address, Role.Manager, metadataHashFor(SEED_EQUIPMENT)],
+    );
+
+    const [minted] = parseEventLogs({
+      abi: assetTokenAbi as never,
+      eventName: "AssetMinted",
+      logs: receipt.logs,
+    }) as unknown as { args?: { tokenId?: bigint } }[];
+
+    const tokenId = minted?.args?.tokenId;
+    if (tokenId !== undefined) {
+      await recordEquipment({
+        tokenId: Number(tokenId),
+        ...SEED_EQUIPMENT,
+        metadataHash: metadataHashFor(SEED_EQUIPMENT),
+      });
+    }
+
+    return receipt;
   }, "Example data loaded — four people added, their clearances given, and one item of equipment put on the system.");
 }
 
@@ -255,15 +281,67 @@ export async function mintAssetAction(
   const holder = personaById(people, String(formData.get("persona")));
   const role = Number(formData.get("role")) as Role;
 
-  return attempt(
-    () =>
-      send(admin, deployment.contracts.AssetToken, assetTokenAbi, "mint", [
-        holder.address,
-        role,
-        `0x${"a3".repeat(32)}`,
-      ]),
-    `Equipment added and given to ${holder.name}.`,
-  );
+  const name = String(formData.get("name") ?? "").trim();
+  const serial = String(formData.get("serial") ?? "").trim();
+
+  if (!name) {
+    return { status: "error", message: "Give the equipment a name." };
+  }
+  if (!serial) {
+    return { status: "error", message: "Give the equipment a serial number." };
+  }
+
+  // The token carries the digest of this description, so an edit after the fact
+  // no longer matches the token and anyone can see that it does not — including
+  // the offline verifier, which has the hash inside the bundle. This used to be
+  // a fixed placeholder.
+  const metadataHash = metadataHashFor({ name, serial });
+
+  let mintedTokenId: number | null = null;
+
+  const result = await attempt(async () => {
+    const receipt = await send(
+      admin,
+      deployment.contracts.AssetToken,
+      assetTokenAbi,
+      "mint",
+      [holder.address, role, metadataHash],
+    );
+
+    // The token id does not exist until the mint is mined, so it is read back
+    // off the event rather than guessed from a counter.
+    const [minted] = parseEventLogs({
+      abi: assetTokenAbi as never,
+      eventName: "AssetMinted",
+      logs: receipt.logs,
+    }) as unknown as { args?: { tokenId?: bigint } }[];
+
+    const tokenId = minted?.args?.tokenId;
+    if (tokenId !== undefined) mintedTokenId = Number(tokenId);
+
+    return receipt;
+  }, `${name} added and given to ${holder.name}.`);
+
+  if (result.status === "success" && mintedTokenId !== null) {
+    try {
+      await recordEquipment({ tokenId: mintedTokenId, name, serial, metadataHash });
+      revalidateConsole();
+    } catch (error) {
+      // A mint cannot be undone, so this degrades rather than pretends: the
+      // token exists and the asset lists will show it as "Item #N" until the
+      // description is recorded. Saying so beats silently losing the name.
+      console.error("[mint] could not record the equipment description", error);
+      return {
+        status: "error",
+        message:
+          `The equipment was added to the shared record as item #${mintedTokenId}, ` +
+          "but its name and serial number could not be saved. It will show as " +
+          "unnamed until that is fixed.",
+      };
+    }
+  }
+
+  return result;
 }
 
 /**

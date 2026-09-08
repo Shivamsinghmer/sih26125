@@ -8,6 +8,7 @@ import { Card } from "@/components/ui";
 import { loadPeople, shortAddress } from "@/lib/chain";
 import { areaLabel } from "@/lib/audit-labels";
 import { loadAuditTrail, type AuditEntry } from "@/lib/audit";
+import { loadEquipment } from "@/lib/equipment";
 import { loadConsoleState, type ConsoleState } from "@/lib/state";
 
 export const dynamic = "force-dynamic";
@@ -200,10 +201,11 @@ function Tile({
 }
 
 export default async function DashboardPage() {
-  const [state, auditTrail, people] = await Promise.all([
+  const [state, auditTrail, people, equipment] = await Promise.all([
     loadConsoleState(),
     loadAuditTrail(),
     loadPeople(),
+    loadEquipment(),
   ]);
 
   if (!state) {
@@ -290,7 +292,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
         <div className="mt-5">
-          <AssetsTable assets={state.assets} people={people} />
+          <AssetsTable assets={state.assets} people={people} equipment={equipment} />
         </div>
       </section>
 

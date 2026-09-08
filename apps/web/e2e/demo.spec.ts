@@ -47,8 +47,19 @@ test("step 2 — the asset appears under custody", async ({ page }) => {
   await page.goto("/console/assets");
   // Seeding is re-runnable and mints each time, so the table grows across runs.
   // The demo does not care how many assets exist, only that #1 is held by Priya.
-  await expect(page.getByRole("cell", { name: "#1", exact: true })).toBeVisible();
+  //
+  // Matched on a trailing "#1" rather than an exact cell: the item column names
+  // the equipment now, so the cell reads "Item #1" for a token with no recorded
+  // description and "<name><serial> · #1" for one that has it. Anchoring to the
+  // end keeps it from also matching #10.
+  await expect(page.getByRole("cell", { name: /#1$/ })).toBeVisible();
   await expect(page.getByRole("cell", { name: "Priya Menon" }).first()).toBeVisible();
+
+  // Depends on step 1 having seeded, like step 3 does. It is worth the coupling:
+  // this is the only assertion that the name survives the whole round trip —
+  // typed in, hashed into the token's metadataHash, stored in Postgres, and
+  // joined back onto the on-chain asset by token id.
+  await expect(page.getByText("Signal Analyser").first()).toBeVisible();
 });
 
 test("step 3 — a transfer to an uncredentialled recipient is blocked and explained", async ({

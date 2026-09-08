@@ -15,6 +15,9 @@ export interface PersonaOption {
 
 export interface AssetOption {
   tokenId: string;
+  /** What the item actually is. Absent for tokens minted before descriptions. */
+  name?: string | null;
+  serial?: string | null;
   ownerId: string | null;
   requiredRoleLabel: string;
 }
@@ -46,7 +49,9 @@ export function TransferPanel({
           <Select name="tokenId" defaultValue={firstAsset?.tokenId}>
             {assets.map((asset) => (
               <option key={asset.tokenId} value={asset.tokenId}>
-                #{asset.tokenId} — needs {asset.requiredRoleLabel} clearance
+                {asset.name
+                  ? `${asset.name} (${asset.serial}) — needs ${asset.requiredRoleLabel} clearance`
+                  : `Item #${asset.tokenId} — needs ${asset.requiredRoleLabel} clearance`}
               </option>
             ))}
           </Select>

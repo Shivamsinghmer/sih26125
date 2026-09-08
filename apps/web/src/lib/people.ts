@@ -60,7 +60,14 @@ export interface Persona {
 let client: ReturnType<typeof postgres> | null = null;
 let ready = false;
 
-function connection() {
+/**
+ * The one connection pool.
+ *
+ * Exported so equipment.ts shares it rather than opening a second pool against
+ * the same database — two pools of four against a demo Postgres is how you end
+ * up debugging connection exhaustion instead of demonstrating a product.
+ */
+export function connection() {
   client ??= postgres(DATABASE_URL, { max: 4, onnotice: () => {} });
   return client;
 }

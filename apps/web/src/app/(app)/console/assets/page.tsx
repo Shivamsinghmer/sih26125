@@ -2,13 +2,18 @@ import { AssetsTable } from "@/components/AssetsTable";
 import { MintPanel } from "@/components/MintPanel";
 import { PageHeading } from "@/components/PageHeading";
 import { loadPeople } from "@/lib/chain";
+import { loadEquipment } from "@/lib/equipment";
 import { loadConsoleState } from "@/lib/state";
 import type { PersonaOption } from "@/components/TransferPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function AssetsPage() {
-  const [state, people] = await Promise.all([loadConsoleState(), loadPeople()]);
+  const [state, people, equipment] = await Promise.all([
+    loadConsoleState(),
+    loadPeople(),
+    loadEquipment(),
+  ]);
 
   const personaOptions: PersonaOption[] =
     state?.personas.map((p) => ({
@@ -32,7 +37,7 @@ export default async function AssetsPage() {
         </p>
       ) : (
         <>
-          <AssetsTable assets={state.assets} people={people} />
+          <AssetsTable assets={state.assets} people={people} equipment={equipment} />
 
           <section className="mt-14 border-t border-mist-gray pt-10">
             <h2 id="register" className="scroll-mt-6 text-subheading leading-subheading">Add equipment</h2>
