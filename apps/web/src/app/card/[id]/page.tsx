@@ -31,7 +31,8 @@ export default async function CardPage({
     return (
       <main className="mx-auto max-w-[640px] px-6 py-16">
         <p className="text-body leading-body">
-          No chain to talk to. Deploy the contracts before printing a card.
+          The shared record cannot be reached, so a card cannot be printed
+          right now. Ask whoever looks after the system.
         </p>
       </main>
     );
@@ -51,7 +52,7 @@ export default async function CardPage({
     <main className="mx-auto max-w-[900px] px-6 py-16 print:p-0">
       <div className="flex items-center justify-between print:hidden">
         <Link href="/" className="text-body leading-body text-label hover:text-ink-black">
-          ← Back to console
+          ← Back
         </Link>
         <PrintButton />
       </div>
@@ -59,8 +60,8 @@ export default async function CardPage({
       {!state.registered ? (
         <div className="mt-10 rounded-3xl bg-blush-peach px-8 py-7 text-sienna-brown print:hidden">
           <p className="text-body-lg leading-body-lg">
-            {persona.name} is not yet registered on chain — nothing to print
-            until their identity is anchored.
+            {persona.name} does not have a digital ID yet, so there is nothing
+            to print. Add them on the People page first.
           </p>
         </div>
       ) : (
@@ -85,17 +86,17 @@ export default async function CardPage({
                 <p className="id-card__name">{persona.name}</p>
                 <p className="id-card__title">{persona.title}</p>
                 <p className="id-card__role">
-                  {validRole ? validRole.label.toUpperCase() : "NO ACTIVE ROLE"}
+                  {validRole ? validRole.label.toUpperCase() : "NO CLEARANCE"}
                 </p>
               </div>
 
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="id-card__qr" src={qrDataUrl} alt="Scan to verify on chain" />
+              <img className="id-card__qr" src={qrDataUrl} alt="Scan this to check the clearance" />
             </div>
 
             <div className="id-card__bottom">
               <span className="id-card__addr">{shortAddress(persona.address)}</span>
-              <span>Scan to verify — the QR is the source of truth, not this print</span>
+              <span>Scan the code — it is the check, not this printed line</span>
             </div>
           </div>
         </div>
@@ -103,13 +104,14 @@ export default async function CardPage({
 
       <div className="mx-auto mt-8 max-w-[70ch] text-center print:hidden">
         <p className="text-caption leading-caption text-subtle">
-          The role printed here is a convenience, not a guarantee — it can be
-          revoked the moment after this is laminated. A guard scanning the QR
-          always sees the current on-chain status; this printed line never
-          overrides that.
+          The clearance printed here is a convenience, not a guarantee — it can
+          be taken away the moment after this is laminated. Scanning the code
+          always gives the position right now, and that is the answer that
+          counts. Never accept the printed line over the scan.
         </p>
         <p className="mt-4 text-caption leading-caption text-label">
-          The QR encodes exactly this, and nothing else:
+          The code contains exactly this, and nothing else — no name, no photo,
+          nothing that identifies anybody:
         </p>
         <p className="mono-addr mt-1 break-all text-label">{did}</p>
       </div>

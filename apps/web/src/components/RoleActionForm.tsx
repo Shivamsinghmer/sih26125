@@ -18,9 +18,10 @@ export const ROLE_OPTIONS = [
 type RoleAction = (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
 
 /**
- * The shared shape of every admin operation: pick a person, pick a role, act.
- * Issue, revoke and mint differ only in which action they post to and whether
- * an expiry applies, so they share one form rather than three near-copies.
+ * The shared shape of every issuing-authority operation: pick a person, pick a
+ * clearance level, act. Giving, withdrawing and adding equipment differ only in
+ * which action they post to and whether an end date applies, so they share one
+ * form rather than three near-copies.
  */
 export function RoleActionForm({
   personas,
@@ -52,7 +53,7 @@ export function RoleActionForm({
           </Select>
         </Field>
 
-        <Field label="Role">
+        <Field label="Clearance level">
           <Select name="role" defaultValue={3}>
             {ROLE_OPTIONS.map((r) => (
               <option key={r.value} value={r.value}>
@@ -63,7 +64,7 @@ export function RoleActionForm({
         </Field>
 
         {showDuration ? (
-          <Field label="Valid for">
+          <Field label="Lasts for">
             <Select name="days" defaultValue={30}>
               <option value={30}>30 days</option>
               <option value={90}>90 days</option>

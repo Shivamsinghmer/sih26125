@@ -6,6 +6,7 @@ import { EventsOverTime, type Bucket } from "@/components/dash/EventsOverTime";
 import { ShareBarList, type ShareRow } from "@/components/dash/ShareBarList";
 import { Card } from "@/components/ui";
 import { loadPeople, shortAddress } from "@/lib/chain";
+import { areaLabel } from "@/lib/audit-labels";
 import { loadAuditTrail, type AuditEntry } from "@/lib/audit";
 import { loadConsoleState, type ConsoleState } from "@/lib/state";
 
@@ -21,9 +22,13 @@ export const dynamic = "force-dynamic";
  * visitors, and filling analytics widgets with invented numbers on a defence
  * submission would be worse than having no dashboard at all.
  *
- * So the shapes are the block's and every series is read from the chain:
- * when it was written to, how credentials are distributed, which contract
- * emitted what, who holds which asset. Nothing here is seeded or estimated.
+ * So the shapes are the block's and every series is read from the chain: when
+ * it was written to, how clearances are distributed, what has been changing,
+ * who holds which item. Nothing here is seeded or estimated.
+ *
+ * Tiles are titled with the question they answer rather than the thing they
+ * count — "Who is holding what", not "Assets by holder". The reader is a stores
+ * officer with a question, not an analyst browsing dimensions.
  *
  * Installing the block outright was not an option either way: it needs shadcn
  * scaffolding, and `shadcn init` rewrites globals.css, which is where the Steep
@@ -65,7 +70,7 @@ function bucketEvents(entries: AuditEntry[]): Bucket[] {
   return buckets;
 }
 
-function credentialsByRole(state: ConsoleState): ShareRow[] {
+function clearancesByLevel(state: ConsoleState): ShareRow[] {
   const counts = new Map<string, number>();
   for (const p of state.personas) {
     for (const h of p.holdings) {
@@ -78,7 +83,7 @@ function credentialsByRole(state: ConsoleState): ShareRow[] {
     .sort((a, b) => b.value - a.value);
 }
 
-function credentialHealth(state: ConsoleState): ShareRow[] {
+function clearanceStatus(state: ConsoleState): ShareRow[] {
   let valid = 0;
   let revoked = 0;
   let expired = 0;
@@ -92,15 +97,23 @@ function credentialHealth(state: ConsoleState): ShareRow[] {
   // Zero rows are kept: "no revocations" is a fact worth stating, and a list
   // that silently drops empty states makes the reader guess.
   return [
-    { label: "Valid", value: valid, note: "in force" },
-    { label: "Revoked", value: revoked, note: "withdrawn", flagged: revoked > 0 },
-    { label: "Expired", value: expired, note: "lapsed", flagged: expired > 0 },
+    { label: "In date", value: valid, note: "usable now" },
+    { label: "Taken away", value: revoked, note: "withdrawn", flagged: revoked > 0 },
+    { label: "Run out", value: expired, note: "past its date", flagged: expired > 0 },
   ];
 }
 
-function eventsByContract(entries: AuditEntry[]): ShareRow[] {
+/**
+ * Grouped by the part of the operation it belongs to, not by which contract
+ * emitted it. "RoleRegistry: 14" tells a stores officer nothing; "Clearances:
+ * 14" tells them where the week went.
+ */
+function changesByArea(entries: AuditEntry[]): ShareRow[] {
   const counts = new Map<string, number>();
-  for (const e of entries) counts.set(e.contract, (counts.get(e.contract) ?? 0) + 1);
+  for (const e of entries) {
+    const label = areaLabel(e.contract);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
   return [...counts.entries()]
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
@@ -119,20 +132,31 @@ function assetsByHolder(
     counts.set(label, (counts.get(label) ?? 0) + 1);
   }
   return [...counts.entries()]
-    .map(([label, value]) => ({ label, value, note: value === 1 ? "asset" : "assets" }))
+    .map(([label, value]) => ({ label, value, note: value === 1 ? "item" : "items" }))
     .sort((a, b) => b.value - a.value);
 }
 
+/**
+ * Shown when the record cannot be reached. The commands stay, below a sentence
+ * that does not need them: whoever is looking after the machine wants the exact
+ * incantation, and whoever is merely using it needs to know it is not their
+ * fault and who to ask.
+ */
 function NotDeployed() {
   return (
     <Card>
       <h2 className="display-serif text-heading-sm leading-heading-sm tracking-heading-sm">
-        No chain to talk to
+        The shared record cannot be reached
       </h2>
-      <p className="mt-3 text-body leading-body">
-        Start a node and deploy the contracts, then reload this page.
+      <p className="mt-3 max-w-[62ch] text-body leading-body">
+        Nothing is lost and nothing is wrong with what you were doing. The
+        system needs to be started up again — ask whoever looks after it, then
+        reload this page.
       </p>
-      <pre className="mono-addr mt-5 overflow-x-auto rounded-2xl bg-paper-white px-5 py-4 leading-relaxed">
+      <p className="mt-5 text-caption leading-caption text-label">
+        For whoever looks after it:
+      </p>
+      <pre className="mono-addr mt-2 overflow-x-auto rounded-2xl bg-paper-white px-5 py-4 leading-relaxed">
         {`pnpm --filter @sih26125/contracts node
 pnpm demo:reset`}
       </pre>
@@ -162,7 +186,9 @@ function Tile({
         {link ? (
           <Link
             href={link.href}
-            className="text-[12px] text-label underline underline-offset-2 hover:text-ink-black"
+            // shrink-0 and nowrap: a two-line tile title was squeezing the link
+            // until its own arrow wrapped onto a second line under it.
+            className="shrink-0 whitespace-nowrap text-[12px] text-label underline underline-offset-2 hover:text-ink-black"
           >
             {link.label}
           </Link>
@@ -195,34 +221,36 @@ export default async function DashboardPage() {
     p.holdings.some((h) => h.validity === "valid"),
   ).length;
 
-  const highestBlock = entries.reduce(
-    (m, e) => (e.blockNumber > m ? e.blockNumber : m),
-    0n,
-  );
-
   return (
     <>
       <PageHeading title="Dashboard">
-        What the chain currently holds. Every figure here is read from contract
-        state, not from a cache — the numbers and the chain cannot disagree.
+        Where everything stands right now. Every number here is counted fresh
+        from the shared record each time you open this page, so nothing on it is
+        out of date.
       </PageHeading>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Tile title="Chain activity" wide link={{ href: "/audit", label: "Audit trail →" }}>
+        <Tile title="Activity over time" wide link={{ href: "/audit", label: "See the history →" }}>
           <EventsOverTime buckets={bucketEvents(entries)} />
         </Tile>
 
-        <Tile title="Credential health" link={{ href: "/console/credentials", label: "Issue →" }}>
-          <ShareBarList rows={credentialHealth(state)} />
+        <Tile
+          title="Clearances by status"
+          link={{ href: "/console/credentials", label: "Give one →" }}
+        >
+          <ShareBarList rows={clearanceStatus(state)} />
         </Tile>
 
-        <Tile title="Deployment">
+        {/* The one tile that is genuinely about the machinery. Kept, because
+            somebody has to be able to answer "is this thing actually on", and
+            labelled so that everyone else can tell it is not about their work. */}
+        <Tile title="System">
           <dl className="mt-4 flex flex-col gap-3">
             {[
-              ["Chain", String(state.deployment.chainId)],
-              ["Height", highestBlock === 0n ? "—" : `block ${highestBlock}`],
-              ["People", `${state.personas.length} · ${credentialled} credentialled`],
-              ["AssetToken", shortAddress(state.deployment.contracts.AssetToken)],
+              ["Status", "Connected"],
+              ["Changes recorded", entries.length === 0 ? "—" : String(entries.length)],
+              ["People on file", String(state.personas.length)],
+              ["With a clearance", String(credentialled)],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">
                 <dt className="text-caption leading-caption text-label">{k}</dt>
@@ -232,30 +260,33 @@ export default async function DashboardPage() {
           </dl>
         </Tile>
 
-        <Tile title="Credentials in force" link={{ href: "/console/people", label: "People →" }}>
+        <Tile title="Who is cleared for what" link={{ href: "/console/people", label: "People →" }}>
           <ShareBarList
-            rows={credentialsByRole(state)}
-            emptyNote="No credential is currently valid."
+            rows={clearancesByLevel(state)}
+            emptyNote="Nobody holds a clearance that is in date."
           />
         </Tile>
 
-        <Tile title="Events by contract">
-          <ShareBarList rows={eventsByContract(entries)} emptyNote="No events yet." />
+        <Tile title="What has been changing">
+          <ShareBarList rows={changesByArea(entries)} emptyNote="Nothing recorded yet." />
         </Tile>
 
-        <Tile title="Assets by holder" link={{ href: "/console/assets", label: "Assets →" }}>
-          <ShareBarList rows={assetsByHolder(state, people)} emptyNote="No assets minted." />
+        <Tile title="Who is holding what" link={{ href: "/console/assets", label: "Equipment →" }}>
+          <ShareBarList
+            rows={assetsByHolder(state, people)}
+            emptyNote="No equipment added yet."
+          />
         </Tile>
       </div>
 
       <section className="mt-14">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-subheading leading-subheading">Assets under custody</h2>
+          <h2 className="text-subheading leading-subheading">Equipment and who holds it</h2>
           <Link
             href="/console/assets"
             className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
           >
-            Manage assets →
+            Manage equipment →
           </Link>
         </div>
         <div className="mt-5">
@@ -265,18 +296,18 @@ export default async function DashboardPage() {
 
       <section className="mt-14">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-subheading leading-subheading">Latest activity</h2>
+          <h2 className="text-subheading leading-subheading">What happened recently</h2>
           <Link
             href="/audit"
             className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
           >
-            Full audit trail →
+            See everything →
           </Link>
         </div>
 
         {recent.length === 0 ? (
           <p className="mt-5 text-body leading-body text-label">
-            Nothing has happened on this chain yet.
+            Nothing has been recorded yet.
           </p>
         ) : (
           <ul className="mt-5 flex flex-col">
@@ -294,8 +325,8 @@ export default async function DashboardPage() {
                 >
                   {entry.description}
                 </p>
-                <p className="mono-addr mt-1 text-subtle">
-                  block {entry.blockNumber.toString()} · {entry.contract}
+                <p className="text-caption leading-caption text-subtle">
+                  {areaLabel(entry.contract)}
                 </p>
               </li>
             ))}

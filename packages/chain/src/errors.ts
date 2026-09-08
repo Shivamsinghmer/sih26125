@@ -13,6 +13,12 @@ import { allErrorsAbi } from "./abi.js";
  * which is why the contracts use custom errors rather than require-strings:
  * a custom error carries typed arguments (which role, whose account, expired
  * when), and a require-string carries only prose.
+ *
+ * The sentences are written for the person the refusal happens to, not for the
+ * person who wrote the contract. "They have never been given a Manager
+ * clearance" is the same fact as `TransferBlockedRoleNeverGranted`, and it is
+ * the one a stores officer can act on. The decoded error name still travels
+ * alongside, for whoever is diagnosing rather than working.
  */
 
 export type BlockedReason =
@@ -22,11 +28,14 @@ export type BlockedReason =
   | "not-authorised"
   | "unexpected-owner"
   | "nonexistent-asset"
+  | "already-registered"
+  | "not-registered"
+  | "invalid-input"
   | "unknown";
 
 export interface ContractErrorExplanation {
   reason: BlockedReason;
-  /** Short headline, e.g. "Transfer blocked". */
+  /** Short headline, e.g. "Handover blocked". */
   title: string;
   /** Full sentence, safe to render verbatim in the UI. */
   detail: string;
@@ -55,8 +64,8 @@ const KNOWN_ACCESS_CONTROL_ROLES = new Map<string, string>([
 
 const UNKNOWN: ContractErrorExplanation = {
   reason: "unknown",
-  title: "Transaction failed",
-  detail: "The transaction was rejected by the contract for an unrecognised reason.",
+  title: "Change refused",
+  detail: "The shared record refused this, for a reason the system did not recognise.",
 };
 
 /** Decode raw revert data into something a person can read. */
@@ -77,8 +86,8 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
       const required = Number(args[1]) as Role;
       return {
         reason: "role-never-granted",
-        title: "Transfer blocked",
-        detail: `Recipient was never issued a ${roleName(required)} credential.`,
+        title: "Handover blocked",
+        detail: `They have never been given a ${roleName(required)} clearance.`,
         errorName: decoded.errorName,
         recipient,
         requiredRole: required,
@@ -90,8 +99,8 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
       const required = Number(args[1]) as Role;
       return {
         reason: "role-revoked",
-        title: "Transfer blocked",
-        detail: `Recipient's ${roleName(required)} credential has been revoked.`,
+        title: "Handover blocked",
+        detail: `Their ${roleName(required)} clearance was taken away.`,
         errorName: decoded.errorName,
         recipient,
         requiredRole: required,
@@ -104,8 +113,8 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
       const expiredAt = new Date(Number(args[2] as bigint) * 1000);
       return {
         reason: "role-expired",
-        title: "Transfer blocked",
-        detail: `Recipient does not hold a valid ${roleName(required)} credential (expired ${formatExpiry(expiredAt)}).`,
+        title: "Handover blocked",
+        detail: `Their ${roleName(required)} clearance ran out on ${formatExpiry(expiredAt)}.`,
         errorName: decoded.errorName,
         recipient,
         requiredRole: required,
@@ -121,8 +130,8 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
         reason: "not-authorised",
         title: "Not authorised",
         detail: named
-          ? `This account does not hold the ${named} role required for that operation.`
-          : "This account does not hold the role required for that operation.",
+          ? `This sign-in does not have the ${named} rights that action needs.`
+          : "This sign-in does not have the rights that action needs.",
         errorName: decoded.errorName,
         recipient: account,
       };
@@ -133,8 +142,65 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
       const actual = args[2] as string;
       return {
         reason: "unexpected-owner",
-        title: "Reassignment blocked",
-        detail: `Asset #${tokenId.toString()} is not held by the account given — it is held by ${actual}.`,
+        title: "Handover blocked",
+        detail: `Item #${tokenId.toString()} is not held by the person given — it is held by ${actual}.`,
+        errorName: decoded.errorName,
+      };
+    }
+
+    // ---------------------------------------------------------- identity
+    // These reached the screen as a raw viem dump — the contract call, the
+    // ABI args, a docs link and a library version — because the decoder had
+    // no case for them. PROJECT.md's rule is that a revert string never
+    // reaches a user, and an undecoded error is exactly that with extra steps.
+    case "AlreadyRegistered": {
+      const account = args[0] as string;
+      return {
+        reason: "already-registered",
+        title: "Already on the system",
+        detail:
+          `That account already has an identity on the shared record (${account}). ` +
+          "Nothing was changed. This usually means the staff records and the " +
+          "shared record have drifted apart — the person can be found under People.",
+        errorName: decoded.errorName,
+        recipient: account,
+      };
+    }
+
+    case "NotRegistered": {
+      const account = args[0] as string;
+      return {
+        reason: "not-registered",
+        title: "Not on the system",
+        detail: `That account has no identity on the shared record yet (${account}), so there is nothing to change.`,
+        errorName: decoded.errorName,
+        recipient: account,
+      };
+    }
+
+    case "EmptyDid": {
+      return {
+        reason: "invalid-input",
+        title: "Nothing to record",
+        detail: "The identifier was empty, so there was nothing to write to the shared record.",
+        errorName: decoded.errorName,
+      };
+    }
+
+    case "ZeroAddress": {
+      return {
+        reason: "invalid-input",
+        title: "No account given",
+        detail: "An account has to be named before anything can be recorded against it.",
+        errorName: decoded.errorName,
+      };
+    }
+
+    case "SameAccount": {
+      return {
+        reason: "invalid-input",
+        title: "Same account both sides",
+        detail: "The old and new accounts are the same, so there is nothing to move.",
         errorName: decoded.errorName,
       };
     }
@@ -143,8 +209,8 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
       const tokenId = args[0] as bigint;
       return {
         reason: "nonexistent-asset",
-        title: "Asset not found",
-        detail: `Asset #${tokenId.toString()} does not exist.`,
+        title: "Item not found",
+        detail: `Item #${tokenId.toString()} is not on the system.`,
         errorName: decoded.errorName,
       };
     }
@@ -153,7 +219,7 @@ export function decodeContractErrorData(data: Hex): ContractErrorExplanation {
       return {
         ...UNKNOWN,
         errorName: decoded.errorName,
-        detail: `The contract rejected this transaction (${decoded.errorName}).`,
+        detail: `The shared record refused this (${decoded.errorName}).`,
       };
   }
 }

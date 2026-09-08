@@ -19,7 +19,8 @@ export type NavIconName =
   | "assets"
   | "transfer"
   | "gate"
-  | "audit";
+  | "audit"
+  | "help";
 
 const PATHS: Record<NavIconName, React.ReactNode> = {
   // A pane split into panels — the console's own layout.
@@ -67,6 +68,15 @@ const PATHS: Record<NavIconName, React.ReactNode> = {
       <path d="M14.8 15V8.8" />
     </>
   ),
+  // A question inside a ring — the one glyph here that depicts asking rather
+  // than a thing, because that is what the screen is for.
+  help: (
+    <>
+      <circle cx="9" cy="9" r="6.6" />
+      <path d="M7.2 7.1a1.85 1.85 0 1 1 2.5 1.74c-.5.2-.7.6-.7 1.06v.4" />
+      <path d="M9 12.7h.01" />
+    </>
+  ),
   // A record with a replayed line.
   audit: (
     <>
@@ -104,5 +114,6 @@ export function iconForHref(href: string): NavIconName {
   if (href.startsWith("/console/assets")) return "assets";
   if (href.startsWith("/console/transfers")) return "transfer";
   if (href.startsWith("/gate")) return "gate";
+  if (href.startsWith("/help")) return "help";
   return "audit";
 }

@@ -34,9 +34,9 @@ describe("decoding blocked transfers", () => {
     const explained = decodeContractErrorData(data);
 
     expect(explained.reason).toBe("role-expired");
-    expect(explained.title).toBe("Transfer blocked");
+    expect(explained.title).toBe("Handover blocked");
     expect(explained.detail).toBe(
-      "Recipient does not hold a valid Manager credential (expired 12 Aug 2026).",
+      "Their Manager clearance ran out on 12 Aug 2026.",
     );
     expect(explained.requiredRole).toBe(Role.Manager);
     expect(explained.expiredAt?.getTime()).toBe(EXPIRY_TS * 1000);
@@ -48,7 +48,7 @@ describe("decoding blocked transfers", () => {
 
     expect(explained.reason).toBe("role-revoked");
     expect(explained.detail).toBe(
-      "Recipient's Manager credential has been revoked.",
+      "Their Manager clearance was taken away.",
     );
   });
 
@@ -58,7 +58,7 @@ describe("decoding blocked transfers", () => {
 
     expect(explained.reason).toBe("role-never-granted");
     expect(explained.detail).toBe(
-      "Recipient was never issued a Manager credential.",
+      "They have never been given a Manager clearance.",
     );
   });
 
@@ -88,7 +88,7 @@ describe("decoding administrative failures", () => {
 
     expect(explained.reason).toBe("not-authorised");
     expect(explained.detail).toBe(
-      "This account does not hold the Issuer role required for that operation.",
+      "This sign-in does not have the Issuer rights that action needs.",
     );
   });
 
@@ -97,13 +97,13 @@ describe("decoding administrative failures", () => {
     const explained = decodeContractErrorData(data);
 
     expect(explained.reason).toBe("unexpected-owner");
-    expect(explained.detail).toContain("Asset #7");
+    expect(explained.detail).toContain("Item #7");
     expect(explained.detail).toContain(HOLDER);
   });
 
   it("explains a missing asset", () => {
     const data = encode("ERC721NonexistentToken", [42n]);
-    expect(decodeContractErrorData(data).detail).toBe("Asset #42 does not exist.");
+    expect(decodeContractErrorData(data).detail).toBe("Item #42 is not on the system.");
   });
 });
 
@@ -130,5 +130,40 @@ describe("expiry formatting", () => {
   it("renders an unambiguous date", () => {
     expect(formatExpiry(new Date(Date.UTC(2026, 0, 5, 12)))).toBe("5 Jan 2026");
     expect(formatExpiry(new Date(Date.UTC(2026, 11, 31, 12)))).toBe("31 Dec 2026");
+  });
+});
+
+describe("decoding identity errors", () => {
+  // These reached the console as a raw viem dump — contract address, ABI args,
+  // a docs link and a library version — because the decoder had no case for
+  // them. PROJECT.md's rule is that a revert string never reaches a user.
+  it("explains an address that already has an identity, without leaking the revert", () => {
+    const explained = decodeContractErrorData(encode("AlreadyRegistered", [RECIPIENT]));
+
+    expect(explained.reason).toBe("already-registered");
+    expect(explained.errorName).toBe("AlreadyRegistered");
+    expect(explained.title).toBe("Already on the system");
+    expect(explained.detail).toContain(RECIPIENT);
+    expect(explained.detail).toContain("Nothing was changed");
+    // The tells of an undecoded viem error.
+    expect(explained.detail).not.toMatch(/viem|Contract Call|reverted|0x[0-9a-f]{8,}/i);
+  });
+
+  it("explains an address with no identity yet", () => {
+    const explained = decodeContractErrorData(encode("NotRegistered", [HOLDER]));
+
+    expect(explained.reason).toBe("not-registered");
+    expect(explained.detail).toContain(HOLDER);
+    expect(explained.detail).toContain("nothing to change");
+  });
+
+  it("explains the input guards without naming Solidity", () => {
+    for (const name of ["ZeroAddress", "EmptyDid", "SameAccount"]) {
+      const explained = decodeContractErrorData(encode(name, []));
+      expect(explained.reason).toBe("invalid-input");
+      expect(explained.errorName).toBe(name);
+      expect(explained.detail.length).toBeGreaterThan(20);
+      expect(explained.detail).not.toMatch(/revert|viem/i);
+    }
   });
 });

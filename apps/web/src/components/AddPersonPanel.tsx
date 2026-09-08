@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 
-import { IDLE } from "@/lib/action-types";
+import { IDLE, MAX_PHOTO_BYTES } from "@/lib/action-types";
 import { addPersonAction } from "@/lib/actions";
 import { ActionResultCard } from "./ActionResultCard";
 import { Field, PillButton, Select } from "./ui";
@@ -12,19 +12,38 @@ const ROLE_OPTIONS = [
   { value: 2, label: "Auditor" },
   { value: 1, label: "User" },
   { value: 4, label: "Admin" },
-  { value: 0, label: "No role yet" },
+  { value: 0, label: "No clearance yet" },
 ];
 
 export function AddPersonPanel() {
   const [result, formAction, pending] = useActionState(addPersonAction, IDLE);
   const [preview, setPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
+  /**
+   * Checked here as well as on the server, because the server can only answer
+   * after the whole file has been uploaded — and a photo straight off a phone
+   * is big enough that somebody would sit and wait for a refusal. The server
+   * still enforces it; this only saves the wait.
+   */
   function onPhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    setPhotoError(null);
+
     if (!file) {
       setPreview(null);
       return;
     }
+
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPreview(null);
+      event.target.value = "";
+      setPhotoError(
+        "That photo is too large. Please use one under 2MB — a phone photo usually needs shrinking first.",
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => setPreview(typeof reader.result === "string" ? reader.result : null);
     reader.readAsDataURL(file);
@@ -33,11 +52,11 @@ export function AddPersonPanel() {
   return (
     <div className="flex flex-col gap-5">
       <p className="max-w-[70ch] text-body leading-body text-label">
-        Onboarding writes the name, title and photo to Postgres and a
-        decentralised identity to the chain. Nothing identifying a person
-        reaches the chain — only a DID, a public key and a status flag — which
-        is what makes an erasure request answerable later. The photo exists so
-        an ID card can be printed; nothing in the system looks it up at a gate.
+        Their name, job title and photo are kept in the staff records here. What
+        goes onto the shared record is only an ID &mdash; nothing that names
+        them &mdash; which is what lets their details be deleted later if they
+        ask. The photo is used for printing their ID card; the gate does not
+        look it up.
       </p>
 
       <form action={formAction} className="flex flex-wrap items-end gap-4">
@@ -61,9 +80,19 @@ export function AddPersonPanel() {
               name="photo"
               accept="image/*"
               onChange={onPhotoChange}
+              aria-describedby={photoError ? "photo-error" : undefined}
               className="text-caption leading-caption text-label file:mr-3 file:rounded-full file:border-0 file:bg-ink-black file:px-4 file:py-2 file:text-[13px] file:text-paper-white"
             />
           </div>
+          {photoError ? (
+            <p
+              id="photo-error"
+              role="alert"
+              className="max-w-[42ch] text-caption leading-caption text-sienna-brown"
+            >
+              {photoError}
+            </p>
+          ) : null}
         </Field>
 
         <Field label="Name">
@@ -76,7 +105,7 @@ export function AddPersonPanel() {
           />
         </Field>
 
-        <Field label="Title">
+        <Field label="Job title">
           <input
             name="title"
             placeholder="Engineer, Radar Systems"
@@ -84,7 +113,7 @@ export function AddPersonPanel() {
           />
         </Field>
 
-        <Field label="Initial role">
+        <Field label="Starting clearance">
           <Select name="role" defaultValue={1}>
             {ROLE_OPTIONS.map((r) => (
               <option key={r.value} value={r.value}>
@@ -94,7 +123,7 @@ export function AddPersonPanel() {
           </Select>
         </Field>
 
-        <Field label="Valid for">
+        <Field label="Lasts for">
           <Select name="days" defaultValue={30}>
             <option value={30}>30 days</option>
             <option value={90}>90 days</option>
@@ -103,7 +132,7 @@ export function AddPersonPanel() {
         </Field>
 
         <PillButton type="submit" disabled={pending}>
-          {pending ? "Onboarding…" : "Add person"}
+          {pending ? "Adding…" : "Add person"}
         </PillButton>
       </form>
 

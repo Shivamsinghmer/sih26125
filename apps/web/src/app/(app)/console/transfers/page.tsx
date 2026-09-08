@@ -16,7 +16,7 @@ export default async function TransfersPage() {
     state?.personas.map((p) => ({
       id: p.persona.id,
       name: p.persona.name,
-      roleLabel: p.holdings.find((h) => h.validity === "valid")?.label ?? "no valid role",
+      roleLabel: p.holdings.find((h) => h.validity === "valid")?.label ?? "no clearance",
     })) ?? [];
 
   const assetOptions: AssetOption[] =
@@ -28,15 +28,16 @@ export default async function TransfersPage() {
 
   return (
     <>
-      <PageHeading title="Move an asset">
-        A transfer to someone without a valid credential does not fail politely
-        here — it reverts inside the contract. The same call from a script fails
-        identically.
+      <PageHeading title="Hand over an item">
+        Pass a piece of equipment to somebody else. If they are not cleared to
+        hold it, nothing will move and you will be told exactly why &mdash; that
+        is the system working, and no account here can override it.
       </PageHeading>
 
       {!state ? (
         <p className="text-body leading-body text-label">
-          No chain to read. Deploy the contracts and reload.
+          The shared record cannot be reached at the moment. Ask whoever looks
+          after the system, then reload this page.
         </p>
       ) : (
         <TransferPanel personas={personaOptions} assets={assetOptions} />

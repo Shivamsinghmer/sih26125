@@ -1,7 +1,7 @@
 import { personaByAddress, shortAddress, type Persona } from "@/lib/chain";
 import type { AssetState } from "@/lib/state";
 
-/** Assets under custody, shared by the dashboard overview and the Assets page. */
+/** Equipment and who holds it, shared by the dashboard and the Equipment page. */
 export function AssetsTable({
   assets,
   people,
@@ -11,7 +11,9 @@ export function AssetsTable({
 }) {
   if (assets.length === 0) {
     return (
-      <p className="text-body leading-body text-label">Nothing minted yet.</p>
+      <p className="text-body leading-body text-label">
+        No equipment has been added yet.
+      </p>
     );
   }
 
@@ -20,10 +22,10 @@ export function AssetsTable({
       <table className="w-full border-collapse text-left">
         <thead>
           <tr className="text-caption leading-caption text-label">
-            <th className="pb-3 font-normal">Asset</th>
+            <th className="pb-3 font-normal">Item</th>
             <th className="pb-3 font-normal">Held by</th>
-            <th className="pb-3 font-normal">Requires</th>
-            <th className="pb-3 font-normal">Minted</th>
+            <th className="pb-3 font-normal">Needs</th>
+            <th className="pb-3 font-normal">Added</th>
           </tr>
         </thead>
         <tbody className="text-body">

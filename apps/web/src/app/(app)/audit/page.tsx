@@ -33,16 +33,17 @@ export default async function AuditPage({
 
   return (
     <>
-      <PageHeading title="Replay the whole history">
-        Every identity, credential, mint and transfer, reconstructed from chain
-        events in order. Read-only by design — this view cannot change anything
-        it reports on.
+      <PageHeading title="History">
+        Everything that has happened, in the order it happened: every ID
+        created, every clearance given or taken away, and every handover. Nothing
+        on this page can be edited — not by you, and not by anyone.
       </PageHeading>
 
       {entries === null ? (
         <div className="rounded-3xl bg-mist-gray px-8 py-7">
           <p className="text-body leading-body">
-            No chain to read. Deploy the contracts and reload.
+            The shared record cannot be reached at the moment. Ask whoever looks
+            after the system, then reload this page.
           </p>
         </div>
       ) : (

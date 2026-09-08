@@ -19,7 +19,7 @@ export async function gateCheckAction(
   formData: FormData,
 ): Promise<GateState> {
   const raw = String(formData.get("identifier") ?? "").trim();
-  if (!raw) return { status: "error", message: "Scan a card or paste a DID." };
+  if (!raw) return { status: "error", message: "Scan a card, or type the ID printed on it." };
 
   let address: Address;
   if (isSupportedDid(raw)) {
@@ -29,20 +29,25 @@ export async function gateCheckAction(
   } else {
     return {
       status: "error",
-      message: "Not recognised — expected a did:ethr identifier or a 0x address.",
+      message: "That is not an ID this system recognises. Check the card and try again.",
     };
   }
 
   try {
     const result = await lookupIdentity(address);
     if (!result) {
-      return { status: "error", message: "No chain to check against right now." };
+      return {
+        status: "error",
+        message:
+          "The shared record cannot be reached, so no check can be trusted right now. Call the issuing authority.",
+      };
     }
     return { status: "found", result };
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "The check could not complete.",
+      message:
+        error instanceof Error ? error.message : "The check could not be completed.",
     };
   }
 }

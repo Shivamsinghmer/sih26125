@@ -19,7 +19,9 @@
  *   2. Legibility is not left to chance over a photograph. A white veil sits
  *      over the middle of the band, and every variant's text was measured
  *      against the composited result rather than assumed — Steep's secondary
- *      greys measure 2.9:1 against the photograph's darkest pixel.
+ *      greys measure 2.9:1 against the photograph's darkest pixel. The console
+ *      variant is dimmed to roughly a third for the same reason: it is the same
+ *      sky, at a strength that a page of small grey labels can sit on.
  */
 
 type Variant = "hero" | "page";
@@ -127,17 +129,20 @@ export function SkyBackdrop({ variant = "page" }: { variant?: Variant }) {
         }
 
         /* hero: the band is the composition, and runs most of the first screen.
-           page: the band is a signature, not a stage — it announces the surface
-           and gets out of the way before any table or form reaches it. */
+           page: the same composition, dimmed — it was a 300px signature that had
+           faded out before the first tile, which made the console look like a
+           different product from the page people arrive on. Now it carries the
+           whole first screen the way the hero does, at roughly a third of the
+           strength, so it reads as the same sky without competing with a table. */
         .sky[data-variant="hero"] {
           height: clamp(820px, 108vh, 1320px);
           -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
           mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
         }
         .sky[data-variant="page"] {
-          height: clamp(300px, 42vh, 460px);
-          -webkit-mask-image: linear-gradient(to bottom, #000 34%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 34%, transparent 100%);
+          height: clamp(560px, 82vh, 1040px);
+          -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 58%, transparent 100%);
         }
 
         .sky__photo {
@@ -146,6 +151,9 @@ export function SkyBackdrop({ variant = "page" }: { variant?: Variant }) {
           background: url("/hero-sky.jpg") center / cover no-repeat;
           opacity: 0.85;
         }
+        /* The dimming itself. Everything behind a console is read across, not
+           looked at, so the photograph is present rather than performing. */
+        .sky[data-variant="page"] .sky__photo { opacity: 0.34; }
 
         .sky__blobs { position: absolute; top: 0; left: 0; }
 
@@ -164,6 +172,17 @@ export function SkyBackdrop({ variant = "page" }: { variant?: Variant }) {
             transparent
           );
         }
+        /* Lighter on the console: the wash was tuned against a 300px strip, and
+           over a full screen it bleaches out the very photograph this variant
+           exists to show. */
+        .sky[data-variant="page"] .sky__wash {
+          background: linear-gradient(
+            to bottom,
+            rgba(239, 246, 255, 0.5),
+            rgba(219, 234, 254, 0.22),
+            transparent
+          );
+        }
 
         /* A legibility scrim, not a decoration. */
         .sky__veil {
@@ -176,15 +195,17 @@ export function SkyBackdrop({ variant = "page" }: { variant?: Variant }) {
             rgba(255, 255, 255, 0) 78%
           );
         }
-        /* The page band is shallow, so its veil is a vertical wash instead —
-           an ellipse in a 300px strip would darken the corners the header and
-           the sidebar sit in. */
+        /* A vertical wash rather than the hero's ellipse: a console fills its
+           corners with a rail and a header, and an ellipse would leave both
+           sitting in the darkest part of the frame. It also strengthens on the
+           way down, because that is the direction density increases in — sky at
+           the heading, near-paper by the time a table arrives. */
         .sky[data-variant="page"] .sky__veil {
           background: linear-gradient(
             to bottom,
-            rgba(255, 255, 255, 0.62),
-            rgba(255, 255, 255, 0.8) 62%,
-            rgba(255, 255, 255, 0.92)
+            rgba(255, 255, 255, 0.42),
+            rgba(255, 255, 255, 0.66) 46%,
+            rgba(255, 255, 255, 0.88)
           );
         }
 

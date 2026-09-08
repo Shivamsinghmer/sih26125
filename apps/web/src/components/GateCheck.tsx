@@ -7,6 +7,21 @@ import { GATE_IDLE } from "@/lib/gate-types";
 import { QrScanner } from "./QrScanner";
 import { PillButton } from "./ui";
 
+/**
+ * Why a clearance is not usable, said the way a guard would say it.
+ *
+ * "revoked" and "expired" are the words the record uses and they are not wrong,
+ * but at a gate the difference that matters is whether somebody took it away on
+ * purpose or it simply ran out — and neither of those is a word most people
+ * separate at a glance under pressure.
+ */
+const VALIDITY_LABEL: Record<string, string> = {
+  valid: "in date",
+  "never-granted": "never given",
+  revoked: "taken away",
+  expired: "run out",
+};
+
 function formatExpiry(unix: number): string {
   if (!unix) return "—";
   return new Intl.DateTimeFormat("en-GB", {
@@ -40,7 +55,7 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
       <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-[320px] flex-1 flex-col gap-2">
           <span className="text-caption leading-caption text-label">
-            Or paste a DID / address
+            No scanner? Type the ID printed on the card
           </span>
           <input
             ref={inputRef}
@@ -50,14 +65,14 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
           />
         </label>
         <PillButton type="submit" disabled={pending}>
-          {pending ? "Checking…" : "Check credential"}
+          {pending ? "Checking…" : "Check this card"}
         </PillButton>
       </form>
 
       {presets.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-caption leading-caption text-subtle">
-            No scanner to hand? Try:
+            Or pick a name to try it out:
           </span>
           {presets.map((p) => (
             <form key={p.did} action={formAction}>
@@ -102,28 +117,29 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
               )}
               <div>
                 <h3 className="display-serif text-heading-sm leading-heading-sm tracking-heading-sm">
-                  {clear ? "Credential valid" : "Do not admit"}
+                  {clear ? "Cleared — let them through" : "Not cleared — do not admit"}
                 </h3>
                 <p className="mt-1 text-body leading-body">
-                  {result.name ?? "Not in this console's records"}
-                  {result.registered ? "" : " · identity not registered on chain"}
+                  {result.name ?? "Not in the staff records"}
+                  {result.registered ? "" : " · no digital ID on the system"}
                 </p>
               </div>
             </div>
 
             <div className="text-right">
-              <p className="text-caption leading-caption opacity-70">Identity status</p>
+              <p className="text-caption leading-caption opacity-70">Their status</p>
               <p className="text-body-lg leading-body-lg">{result.statusLabel}</p>
             </div>
           </div>
 
-          <p className="mt-5 text-caption leading-caption opacity-70">
-            Compare the face to the photo printed on the card. This screen proves
-            the credential, never the person.
+          <p className="mt-5 max-w-[62ch] text-caption leading-caption opacity-80">
+            Now look at the person and compare them to the photo. This screen can
+            only tell you the card is in order — whether the person holding it is
+            the right one is still your call.
           </p>
 
           <div className="mt-6 border-t border-current/15 pt-5">
-            <p className="text-caption leading-caption opacity-70">Credentials</p>
+            <p className="text-caption leading-caption opacity-70">Their clearances</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {result.holdings.map((h) => (
                 <span
@@ -136,31 +152,36 @@ export function GateCheck({ presets }: { presets: { label: string; did: string }
                 >
                   {h.label}
                   {h.validity === "valid"
-                    ? ` · to ${formatExpiry(h.expiry)}`
-                    : ` · ${h.validity.replace("-", " ")}`}
+                    ? ` · until ${formatExpiry(h.expiry)}`
+                    : ` · ${VALIDITY_LABEL[h.validity] ?? h.validity}`}
                 </span>
               ))}
             </div>
           </div>
 
           <div className="mt-6 border-t border-current/15 pt-5">
-            <p className="text-caption leading-caption opacity-70">Assets in their custody</p>
+            <p className="text-caption leading-caption opacity-70">
+              Equipment they are holding
+            </p>
             {result.assets.length === 0 ? (
               <p className="mt-2 text-body leading-body">None.</p>
             ) : (
               <ul className="mt-3 flex flex-col gap-2">
                 {result.assets.map((a) => (
                   <li key={a.tokenId} className="text-body leading-body">
-                    Asset #{a.tokenId} — requires {a.requiredRoleLabel} ·{" "}
-                    {a.permitted ? "may carry" : "NOT permitted to carry"}
+                    Item #{a.tokenId} — needs {a.requiredRoleLabel} clearance ·{" "}
+                    {a.permitted ? "allowed to carry" : "NOT allowed to carry"}
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <p className="mono-addr mt-6 opacity-60">
-            {result.did} · checked at block {result.checkedAtBlock}
+          {/* Checked now, not read from anything cached — which is the whole
+              reason a clearance taken away a minute ago already shows here. The
+              ID stays as a tooltip for anyone who needs to quote it. */}
+          <p className="mt-6 text-caption leading-caption opacity-70" title={result.did}>
+            Checked against the shared record just now.
           </p>
         </div>
       ) : null}

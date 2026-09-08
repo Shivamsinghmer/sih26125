@@ -71,28 +71,28 @@ function describe(
   switch (eventName) {
     case "IdentityRegistered":
       return {
-        description: `Decentralised identity registered for ${who(people, args.account as string)} — ${String(args.did)}`,
+        description: `Digital ID created for ${who(people, args.account as string)}`,
       };
 
     case "IdentityStatusChanged":
       return {
-        description: `Identity status changed for ${who(people, args.account as string)}`,
+        description: `Digital ID status changed for ${who(people, args.account as string)}`,
       };
 
     case "BusinessRoleGranted":
       return {
-        description: `${roleLabel(args.role)} credential issued to ${who(people, args.account as string)} by ${who(people, args.issuer as string)}, valid until ${when(args.expiry as bigint)}`,
+        description: `${roleLabel(args.role)} clearance given to ${who(people, args.account as string)} by ${who(people, args.issuer as string)}, valid until ${when(args.expiry as bigint)}`,
       };
 
     case "BusinessRoleRevoked":
       return {
-        description: `${roleLabel(args.role)} credential revoked for ${who(people, args.account as string)} by ${who(people, args.revoker as string)}`,
+        description: `${roleLabel(args.role)} clearance taken away from ${who(people, args.account as string)} by ${who(people, args.revoker as string)}`,
         emphasis: true,
       };
 
     case "AssetMinted":
       return {
-        description: `Asset #${String(args.tokenId)} minted to ${who(people, args.to as string)}, requires a ${roleLabel(args.requiredRole)} credential to hold`,
+        description: `Item #${String(args.tokenId)} added and given to ${who(people, args.to as string)} — needs ${roleLabel(args.requiredRole)} clearance to hold`,
       };
 
     case "Transfer": {
@@ -102,7 +102,7 @@ function describe(
       // zero-address Transfer that accompanies it rather than showing both.
       if (from?.toLowerCase() === ZERO) return null;
       return {
-        description: `Asset #${String(args.tokenId)} moved from ${who(people, from)} to ${who(people, to)}`,
+        description: `Item #${String(args.tokenId)} handed from ${who(people, from)} to ${who(people, to)}`,
         emphasis: true,
       };
     }
@@ -211,6 +211,10 @@ export interface AuditPage {
   eventNames: string[];
   contracts: string[];
 }
+
+// Re-exported so server-side callers have one place to import from; the
+// definitions live in a module with no Node imports, for the client's sake.
+export { AREA_LABEL, CHANGE_LABEL, areaLabel, changeLabel } from "./audit-labels";
 
 export const AUDIT_PAGE_SIZE = 25;
 

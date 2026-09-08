@@ -39,7 +39,12 @@ export default async function AppLayout({
         groups={navFor(session.role)}
         who={session.displayName}
         roleLabel={ROLE_LABEL[session.role]}
-        chainNote={
+        /* Was `chain 26125 · 0x9fE4…a6e0`, which told a stores officer nothing
+           and told a guard less. What they need from this line is whether the
+           thing is on; the identifiers stay in the tooltip for whoever is
+           actually diagnosing something. */
+        chainNote={deployment ? "Connected to the shared record" : "Not connected"}
+        chainDetail={
           deployment
             ? `chain ${deployment.chainId} · ${shortAddress(deployment.contracts.AssetToken)}`
             : undefined

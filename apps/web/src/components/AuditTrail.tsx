@@ -1,3 +1,4 @@
+import { areaLabel } from "@/lib/audit-labels";
 import type { AuditEntry } from "@/lib/audit";
 
 function formatTime(timestamp: number): string {
@@ -24,8 +25,8 @@ export function AuditTrail({
     return (
       <p className="text-body leading-body text-label">
         {filtered
-          ? "No events match those filters."
-          : "Nothing has happened on this chain yet."}
+          ? "Nothing matches what you searched for."
+          : "Nothing has been recorded yet."}
       </p>
     );
   }
@@ -33,9 +34,9 @@ export function AuditTrail({
   return (
     <div className="flex flex-col gap-6">
       <p className="max-w-[70ch] text-body leading-body text-label">
-        Reconstructed from chain events alone — no application database is consulted
-        to build this view. The audit record is not a log about the transactions; it
-        is the transactions, so the two can never disagree.
+        This list is not a summary written alongside the work — it is built from
+        the record of the work itself, so the two cannot drift apart. Nothing here
+        was typed in by anybody, and nothing here can be edited afterwards.
       </p>
 
       <ol className="flex flex-col">
@@ -48,7 +49,7 @@ export function AuditTrail({
               {formatTime(entry.timestamp)}
             </span>
             <span className="text-caption leading-caption text-label">
-              {entry.contract}
+              {areaLabel(entry.contract)}
             </span>
             <div className="col-span-2 md:col-span-1">
               <p
@@ -60,8 +61,12 @@ export function AuditTrail({
               >
                 {entry.description}
               </p>
+              {/* Kept, and kept quiet. Nobody reading this to find out where a
+                  radar unit went needs a transaction hash — but an auditor
+                  chasing one entry back to its origin does, and removing it
+                  would make this page a summary rather than a record. */}
               <p className="mono-addr mt-1 text-subtle">
-                block {entry.blockNumber.toString()} · {entry.transactionHash.slice(0, 18)}…
+                reference {entry.transactionHash.slice(0, 18)}…
               </p>
             </div>
           </li>
@@ -69,7 +74,8 @@ export function AuditTrail({
       </ol>
 
       <p className="text-caption leading-caption text-subtle">
-        Showing {entries.length}. Every one carries the transaction that produced it.
+        Showing {entries.length}. Each line carries the reference it was recorded
+        under, so any one of them can be traced back.
       </p>
     </div>
   );

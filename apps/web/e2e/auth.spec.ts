@@ -100,7 +100,7 @@ test("a wrong terminal password is refused without saying which half was wrong",
   await expect(page).toHaveURL(/\/login/);
 });
 
-test("an auditor reaches the replay and nothing that changes state", async ({ page }) => {
+test("an auditor reaches the history and nothing that changes state", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Private key").fill(AUDITOR_KEY);
   await page.getByLabel(/Passphrase to encrypt/).fill("demo-passphrase");
@@ -108,12 +108,33 @@ test("an auditor reaches the replay and nothing that changes state", async ({ pa
 
   // Their role comes from the chain, not from anything chosen at sign-in.
   await page.waitForURL("**/audit");
-  await expect(page.getByRole("heading", { name: "Replay the whole history" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "History" })).toBeVisible();
 
-  // An auditor who can also issue credentials is not an auditor.
-  await expect(page.getByRole("button", { name: /Revoke credential/ })).toHaveCount(0);
+  // An auditor who can also hand out clearances is not an auditor.
+  await expect(page.getByRole("button", { name: /Take clearance away/ })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Dashboard" })).toHaveCount(0);
 
   await page.goto("/console");
   await expect(page).toHaveURL(/\/audit/);
+});
+
+test("every role can open the instructions", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Terminal ID").fill("gate-3");
+  await page.getByLabel("Password").fill("gate-post-3");
+  await page.getByRole("button", { name: "Sign in as terminal" }).click();
+  await page.waitForURL("**/gate");
+
+  // A guard can reach the help, and it carries the diagrams rather than only
+  // linking to them.
+  await page.getByRole("link", { name: "How to use this" }).click();
+  await expect(page).toHaveURL(/\/help/);
+  await expect(page.getByRole("heading", { name: "How to use this" })).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /What happens when you hand an item over/i }),
+  ).toBeVisible();
+
+  // And it still refuses them what their role cannot open.
+  await page.goto("/console");
+  await expect(page).toHaveURL(/\/gate/);
 });

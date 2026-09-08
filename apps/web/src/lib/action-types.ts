@@ -19,3 +19,15 @@ export type ActionResult =
   | { status: "error"; message: string };
 
 export const IDLE: ActionResult = { status: "idle" };
+
+/**
+ * The largest photo onboarding will take.
+ *
+ * Lives here rather than in `actions.ts` so the form can check it too — a
+ * "use server" module may only export async functions, and a constant exported
+ * from one arrives on the client as a server reference rather than a number.
+ *
+ * Kept well under `serverActions.bodySizeLimit` in next.config.ts, so this is
+ * always the limit that refuses an oversized photo. If either moves, move both.
+ */
+export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;

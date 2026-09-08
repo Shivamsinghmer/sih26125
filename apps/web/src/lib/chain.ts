@@ -32,8 +32,10 @@ export {
   accountFor,
   addPerson,
   loadPeople,
+  nextAddressIndex,
   personaByAddress,
   personaById,
+  removePerson,
   privateKeyFor,
 } from "./people";
 

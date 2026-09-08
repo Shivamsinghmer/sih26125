@@ -22,9 +22,12 @@ export const ROLE_HOME: Record<ConsoleRole, string> = {
 export const ROLE_ACCESS: Record<ConsoleRole, string[]> = {
   // An issuing authority can reach every surface, including the gate view,
   // because they have to be able to reproduce what a guard sees when one calls.
-  admin: ["/console", "/gate", "/audit", "/card"],
-  guard: ["/gate"],
-  auditor: ["/audit"],
+  //
+  // /help is on every list. It reads nothing and changes nothing, and a guard
+  // who cannot open the instructions is a guard who rings somebody instead.
+  admin: ["/console", "/gate", "/audit", "/card", "/help"],
+  guard: ["/gate", "/help"],
+  auditor: ["/audit", "/help"],
 };
 
 /** True when `role` is permitted to reach `pathname`. */

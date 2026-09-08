@@ -15,7 +15,7 @@ import { SESSION_COOKIE, readSessionToken } from "@/lib/session";
  * still checked by the contracts, so getting past this middleware does not let
  * anyone move an asset they could not otherwise move.
  */
-const PROTECTED = ["/console", "/gate", "/audit", "/card"];
+const PROTECTED = ["/console", "/gate", "/audit", "/card", "/help"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

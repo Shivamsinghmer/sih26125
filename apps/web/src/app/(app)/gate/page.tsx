@@ -20,16 +20,18 @@ export default async function GatePage() {
   return (
     <>
       <PageHeading title="Gate check">
-        Two checks happen at a gate, and only one of them is this screen. Compare
-        the person to the photo printed on their card — that part is human. Then
-        scan the card&rsquo;s QR to ask the chain whether their credential is
-        still valid right now.
+        Two checks happen at a gate, and only one of them is this screen. First
+        look at the person and compare them to the photo on their card &mdash;
+        that part is yours. Then scan the code on the card, and this will tell
+        you whether their clearance is valid at this moment.
       </PageHeading>
 
       {!deployment ? (
         <div className="rounded-3xl bg-mist-gray px-8 py-7">
           <p className="text-body leading-body">
-            No chain to check against. Deploy the contracts and reload.
+            The shared record cannot be reached, so no check can be trusted right
+            now. Do not wave anybody through on this screen&rsquo;s say-so &mdash;
+            call the issuing authority.
           </p>
         </div>
       ) : (

@@ -6,12 +6,15 @@ import type { Hex } from "viem";
 import { assetTokenAbi, explainContractError, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
 import { Role, didFromAddress } from "@sih26125/identity";
 
-import { type ActionResult } from "./action-types";
+import { MAX_PHOTO_BYTES, type ActionResult } from "./action-types";
 import {
+  accountFor,
   addPerson,
   loadPeople,
+  nextAddressIndex,
   personaById,
   publicClient,
+  removePerson,
   readDeployment,
   walletFor,
   type Persona,
@@ -19,6 +22,42 @@ import {
 
 const DAY = 86_400;
 const now = () => Math.floor(Date.now() / 1000);
+
+/** How far to look for a free HD index before giving up. */
+const INDEX_SCAN_LIMIT = 64;
+
+/**
+ * The first HD index that is free on *both* sides.
+ *
+ * The staff table can be reset to the demo state; the chain cannot. Allocating
+ * from the table alone therefore handed out an index whose address was still
+ * registered on chain, and onboarding died on `AlreadyRegistered`. The chain is
+ * the authority on what is taken, so ask it.
+ *
+ * In practice this returns on the first probe. It only walks when the two have
+ * drifted, which is exactly the case it exists for.
+ */
+async function freeAddressIndex(identityRegistry: `0x${string}`): Promise<number> {
+  const start = await nextAddressIndex();
+
+  for (let index = start; index < start + INDEX_SCAN_LIMIT; index += 1) {
+    const { address } = accountFor({ addressIndex: index });
+    const identity = (await publicClient.readContract({
+      address: identityRegistry,
+      abi: identityRegistryAbi,
+      functionName: "get",
+      args: [address],
+    })) as { status: number };
+
+    // Status.Unregistered === 0. Anything else means the address is spoken for.
+    if (identity.status === 0) return index;
+  }
+
+  throw new Error(
+    `No unregistered account found in ${INDEX_SCAN_LIMIT} indices from ${start}. ` +
+      "Redeploy the contracts, or reset the demo state.",
+  );
+}
 
 /**
  * Refresh the surfaces that render chain state. These used to revalidate "/",
@@ -87,9 +126,17 @@ async function attempt(
         reason: explained.reason,
       };
     }
+    // The raw error is for the operator running this, not the person using it.
+    // viem's message carries the contract address, the ABI args, a docs link
+    // and its own version string; that reached the screen once and it is
+    // exactly what PROJECT.md forbids. It goes to the server log, and the UI
+    // gets a sentence that says what happened and what state things are in.
+    console.error("[action] unrecognised failure", error);
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Transaction failed.",
+      message:
+        "The shared record refused this, and nothing was changed. " +
+        "The details are in the server log.",
     };
   }
 }
@@ -153,7 +200,7 @@ export async function seedDemo(): Promise<ActionResult> {
       Role.Manager,
       `0x${"a3".repeat(32)}`,
     ]);
-  }, "Demo seeded — identities registered, credentials issued, asset minted.");
+  }, "Example data loaded — four people added, their clearances given, and one item of equipment put on the system.");
 }
 
 export async function grantRoleAction(
@@ -174,7 +221,7 @@ export async function grantRoleAction(
         role,
         BigInt(now() + days * DAY),
       ]),
-    `Credential issued to ${subject.name}.`,
+    `Clearance given to ${subject.name}.`,
   );
 }
 
@@ -194,7 +241,7 @@ export async function revokeRoleAction(
         subject.address,
         role,
       ]),
-    `Credential revoked for ${subject.name}.`,
+    `Clearance taken away from ${subject.name}.`,
   );
 }
 
@@ -215,7 +262,7 @@ export async function mintAssetAction(
         role,
         `0x${"a3".repeat(32)}`,
       ]),
-    `Asset minted to ${holder.name}.`,
+    `Equipment added and given to ${holder.name}.`,
   );
 }
 
@@ -241,7 +288,7 @@ export async function attemptTransferAction(
         to.address,
         tokenId,
       ]),
-    `Asset #${tokenId} transferred to ${to.name}.`,
+    `Item #${tokenId} handed to ${to.name}.`,
   );
 }
 
@@ -266,9 +313,6 @@ export async function seedDemoAction(
  * The signing key is derived from an HD index, so onboarding never writes a
  * private key anywhere.
  */
-/** Kept well under Postgres's text-column comfort zone for a base64 payload. */
-const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
-
 async function readPhoto(formData: FormData): Promise<
   { ok: true; dataUrl: string | null } | { ok: false; message: string }
 > {
@@ -279,7 +323,10 @@ async function readPhoto(formData: FormData): Promise<
     return { ok: false, message: "The photo must be an image file." };
   }
   if (file.size > MAX_PHOTO_BYTES) {
-    return { ok: false, message: "Photo is too large — please use one under 2MB." };
+    return {
+      ok: false,
+      message: "That photo is too large. Please use one under 2MB.",
+    };
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
@@ -310,7 +357,13 @@ export async function addPersonAction(
 
   let created;
   try {
-    created = await addPerson({ name, title: title || "Unassigned", photo: photo.dataUrl });
+    const addressIndex = await freeAddressIndex(deployment.contracts.IdentityRegistry);
+    created = await addPerson({
+      name,
+      title: title || "Unassigned",
+      photo: photo.dataUrl,
+      addressIndex,
+    });
   } catch (error) {
     return {
       status: "error",
@@ -319,7 +372,11 @@ export async function addPersonAction(
     };
   }
 
-  return attempt(async () => {
+  // The staff record had to be written first, because the chain needs the
+  // address it allocates. So if the chain then refuses, take it back out:
+  // otherwise the console reports "nothing has changed" while a person sits in
+  // the staff table with no identity on the shared record.
+  const result = await attempt(async () => {
     await send(
       admin,
       deployment.contracts.IdentityRegistry,
@@ -346,4 +403,17 @@ export async function addPersonAction(
       [created.address, 1],
     );
   }, `${created.name} onboarded — DID registered, ${role === Role.None ? "no role yet" : `${Role[role]} credential issued`}.`);
+
+  if (result.status !== "success") {
+    try {
+      await removePerson(created.id);
+    } catch (cleanupError) {
+      // Say so rather than swallowing it: an orphaned row is exactly the state
+      // the rollback exists to prevent, and the operator needs to know.
+      console.error("[onboard] could not roll back the staff record", cleanupError);
+    }
+    revalidateConsole();
+  }
+
+  return result;
 }

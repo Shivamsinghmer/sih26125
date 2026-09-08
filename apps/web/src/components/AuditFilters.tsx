@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { areaLabel, changeLabel } from "@/lib/audit-labels";
 import type { AuditPage } from "@/lib/audit";
 
 /**
@@ -71,48 +72,46 @@ export function AuditFilters({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-2">
-          <span className="text-caption leading-caption text-label">Contract</span>
+          <span className="text-caption leading-caption text-label">Area</span>
           <select
             name="contract"
             value={current.contract}
             onChange={(e) => navigate({ contract: e.target.value })}
             className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
           >
-            <option value="all">All contracts</option>
+            <option value="all">Everything</option>
             {result.contracts.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {areaLabel(c)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-caption leading-caption text-label">Event</span>
+          <span className="text-caption leading-caption text-label">Kind of change</span>
           <select
             name="event"
             value={current.event}
             onChange={(e) => navigate({ event: e.target.value })}
             className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
           >
-            <option value="all">All events</option>
+            <option value="all">Any change</option>
             {result.eventNames.map((e) => (
               <option key={e} value={e}>
-                {e}
+                {changeLabel(e)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="flex min-w-[240px] flex-1 flex-col gap-2">
-          <span className="text-caption leading-caption text-label">
-            Search the record
-          </span>
+          <span className="text-caption leading-caption text-label">Search</span>
           <input
             name="q"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="a name, an asset number, a DID…"
+            placeholder="a name, or an item number like #1"
             className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
           />
         </label>
@@ -137,8 +136,8 @@ export function AuditFilters({
           ? "Filtering…"
           : `${
               filtered
-                ? `${result.matched} of ${result.total} events match`
-                : `${result.total} events recorded`
+                ? `${result.matched} of ${result.total} changes match`
+                : `${result.total} changes recorded`
             }${result.pageCount > 1 ? ` · page ${result.page} of ${result.pageCount}` : ""}`}
       </p>
     </div>

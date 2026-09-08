@@ -9,8 +9,8 @@ export function MintPanel({ personas }: { personas: PersonaOption[] }) {
     <RoleActionForm
       personas={personas}
       action={mintAssetAction}
-      submitLabel="Mint asset"
-      pendingLabel="Minting…"
+      submitLabel="Add equipment"
+      pendingLabel="Adding…"
     />
   );
 }

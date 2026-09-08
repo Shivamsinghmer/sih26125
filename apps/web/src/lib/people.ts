@@ -138,10 +138,19 @@ export async function addPerson(input: {
   title: string;
   /** A data URL, already validated and size-capped by the caller. */
   photo?: string | null;
+  /**
+   * Which HD index to give them.
+   *
+   * The caller passes this because only the caller can see the chain. Deriving
+   * it here from the staff table alone is what broke onboarding: the table is
+   * resettable and the chain is not, so after a reset this handed out an index
+   * whose address was still registered, and `register` reverted.
+   */
+  addressIndex?: number;
 }): Promise<Persona> {
   await ensureReady();
   const sql = connection();
-  const addressIndex = await nextAddressIndex();
+  const addressIndex = input.addressIndex ?? (await nextAddressIndex());
 
   const id = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${addressIndex}`;
   const photo = input.photo ?? null;
@@ -159,6 +168,21 @@ export async function addPerson(input: {
     address: accountFor({ addressIndex }).address,
     photo,
   };
+}
+
+/**
+ * Undo an `addPerson` whose chain write then failed.
+ *
+ * The staff record is written first — the chain needs the address it allocates
+ * — so a rejected `register` used to leave the row behind. The console then
+ * said "nothing has changed" while a person sat in the staff table with no
+ * identity on the shared record: precisely the divergence between two stores
+ * that this system exists to make impossible.
+ */
+export async function removePerson(id: string): Promise<void> {
+  await ensureReady();
+  const sql = connection();
+  await sql`delete from people where id = ${id}`;
 }
 
 export function personaById(list: Persona[], id: string): Persona {

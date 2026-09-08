@@ -14,7 +14,7 @@ export function SeedButton() {
     <div className="flex flex-col gap-5">
       <form action={formAction}>
         <PillButton type="submit" disabled={pending}>
-          {pending ? "Seeding…" : "Seed the demo"}
+          {pending ? "Loading…" : "Load the example data"}
         </PillButton>
       </form>
       <ActionResultCard result={result} />

@@ -35,7 +35,10 @@ export function PeopleGrid({ personas }: { personas: PersonaState[] }) {
               </div>
             </div>
 
-            <p className="mono-addr mt-3 text-label">
+            {/* Their ID on the shared record. Nobody needs to read it, but it
+                is what a gate check matches against, so it is shown rather
+                than hidden — small, and never in place of their name. */}
+            <p className="mono-addr mt-3 text-[13px] text-label">
               {shortAddress(p.persona.address)}
             </p>
 
@@ -51,7 +54,7 @@ export function PeopleGrid({ personas }: { personas: PersonaState[] }) {
                 ))
               ) : (
                 <span className="text-caption leading-caption text-subtle">
-                  No valid credential
+                  No clearance
                 </span>
               )}
               {revoked.map((h) => (
@@ -59,14 +62,14 @@ export function PeopleGrid({ personas }: { personas: PersonaState[] }) {
                   key={h.role}
                   className="rounded-full bg-blush-peach px-3 py-1 text-[13px] text-sienna-brown"
                 >
-                  {h.label} · revoked
+                  {h.label} · taken away
                 </span>
               ))}
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-2">
               <p className="text-caption leading-caption text-subtle">
-                {p.registered ? "DID registered on chain" : "Not yet registered"}
+                {p.registered ? "Has a digital ID" : "No digital ID yet"}
               </p>
               {p.registered ? (
                 <Link

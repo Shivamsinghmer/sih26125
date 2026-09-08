@@ -52,9 +52,9 @@ export default async function LoginPage() {
 
           <h1 className="display-serif signin__title">Sign in</h1>
           <p className="signin__lede">
-            Signing in decides which screens you can open. It never decides what
-            the chain permits — every state change is still checked by the
-            contracts.
+            Signing in decides which screens you can open. It does not decide
+            what you are allowed to do — that comes from your clearance, and it
+            is checked every single time.
           </p>
         </header>
 
@@ -67,9 +67,9 @@ export default async function LoginPage() {
             </div>
 
             <p className="signin__way-body">
-              Prove you hold your key. Your role is then read from the chain, so
-              a revoked credential closes the console with it — there is no
-              second place to update.
+              Your access is worked out from your clearance when you sign in, so
+              if yours is taken away it closes these screens with it. There is
+              nowhere else anybody has to remember to switch you off.
             </p>
 
             <div className="signin__form">
@@ -100,8 +100,8 @@ export default async function LoginPage() {
 
             <p className="signin__way-body">
               A gate post is staffed by whoever is on shift, so the terminal
-              carries its own credential — the way a card reader does today —
-              rather than issuing every guard a personal key to unlock a shared
+              itself is given a sign-in — the way a card reader is set up today
+              — rather than every guard needing their own to unlock a shared
               screen.
             </p>
 

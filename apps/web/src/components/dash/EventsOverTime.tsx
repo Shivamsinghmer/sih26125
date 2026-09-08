@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /**
- * When the chain was written to.
+ * When the record was written to.
  *
  * The lead tile of the dashboard, and the only chart here with a hover layer:
  * a bar's height is a magnitude you can compare but not read, so the exact
@@ -41,7 +41,7 @@ export function EventsOverTime({ buckets }: { buckets: Bucket[] }) {
   if (buckets.length === 0 || total === 0) {
     return (
       <p className="mt-4 text-caption leading-caption text-label">
-        No events recorded yet. Seed the chain and this fills in.
+        Nothing recorded yet. This fills in as the system is used.
       </p>
     );
   }
@@ -56,14 +56,15 @@ export function EventsOverTime({ buckets }: { buckets: Bucket[] }) {
         {active ? (
           <>
             <span className="tabular text-ink-black">{active.count}</span>{" "}
-            {active.count === 1 ? "event" : "events"} ·{" "}
-            <span className="tabular">{active.fromLabel}</span>–
+            {active.count === 1 ? "change" : "changes"} between{" "}
+            <span className="tabular">{active.fromLabel}</span> and{" "}
             <span className="tabular">{active.toLabel}</span>
           </>
         ) : (
           <>
-            <span className="tabular text-ink-black">{total}</span> events across{" "}
-            <span className="tabular">{buckets.length}</span> intervals
+            <span className="tabular text-ink-black">{total}</span>{" "}
+            {total === 1 ? "change" : "changes"} recorded &mdash; hover a bar for a
+            time
           </>
         )}
       </p>
@@ -86,7 +87,7 @@ export function EventsOverTime({ buckets }: { buckets: Bucket[] }) {
               onMouseEnter={() => setHover(i)}
               onFocus={() => setHover(i)}
               onBlur={() => setHover(null)}
-              aria-label={`${b.count} events between ${b.fromLabel} and ${b.toLabel}`}
+              aria-label={`${b.count} changes between ${b.fromLabel} and ${b.toLabel}`}
             >
               {/* The hit target is the whole column; the mark is only the bar. */}
               <span

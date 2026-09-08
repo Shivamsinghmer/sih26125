@@ -31,7 +31,8 @@ export function TransferPanel({
   if (assets.length === 0) {
     return (
       <p className="text-body leading-body text-label">
-        No assets minted yet — seed the demo or mint one first.
+        There is no equipment on the system yet. Add a piece on the Equipment
+        page first, or load the example data from the People page.
       </p>
     );
   }
@@ -41,17 +42,17 @@ export function TransferPanel({
   return (
     <div className="flex flex-col gap-6">
       <form action={formAction} className="flex flex-wrap items-end gap-4">
-        <Field label="Asset">
+        <Field label="Item">
           <Select name="tokenId" defaultValue={firstAsset?.tokenId}>
             {assets.map((asset) => (
               <option key={asset.tokenId} value={asset.tokenId}>
-                #{asset.tokenId} — requires {asset.requiredRoleLabel}
+                #{asset.tokenId} — needs {asset.requiredRoleLabel} clearance
               </option>
             ))}
           </Select>
         </Field>
 
-        <Field label="Current holder">
+        <Field label="Held by">
           <Select name="from" defaultValue={firstAsset?.ownerId ?? personas[0]?.id}>
             {personas.map((p) => (
               <option key={p.id} value={p.id}>
@@ -61,7 +62,7 @@ export function TransferPanel({
           </Select>
         </Field>
 
-        <Field label="Transfer to">
+        <Field label="Hand it to">
           <Select name="to" defaultValue={personas[personas.length - 1]?.id}>
             {personas.map((p) => (
               <option key={p.id} value={p.id}>
@@ -72,7 +73,7 @@ export function TransferPanel({
         </Field>
 
         <PillButton type="submit" disabled={pending}>
-          {pending ? "Submitting…" : "Attempt transfer"}
+          {pending ? "Checking…" : "Hand over"}
         </PillButton>
       </form>
 
