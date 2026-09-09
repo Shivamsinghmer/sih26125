@@ -87,7 +87,7 @@ export default async function LandingPage() {
 
   return (
     <div className="landing-shell">
-      <SkyBackdrop variant="hero" />
+      <SkyBackdrop />
 
       <div className="mkt landing">
       <header className="landing__bar">

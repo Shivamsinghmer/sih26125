@@ -42,7 +42,10 @@ export default async function LoginPage() {
 
   return (
     <div className="signin">
-      <SkyBackdrop variant="hero" />
+      {/* Held still. This page derives a key and signs a nonce; it should not
+          also be shading a full-screen shader every frame. Measured: animating,
+          the sign-in flow missed a 60s timeout under software rendering. */}
+      <SkyBackdrop animate={false} />
 
       <main className="signin__inner">
         <header className="signin__head">

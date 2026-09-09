@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import { Sidebar } from "@/components/Sidebar";
-import { SkyBackdrop } from "@/components/SkyBackdrop";
 import { SignOutButton } from "@/components/SignOutButton";
 import { getSession } from "@/lib/auth-actions";
 import { ROLE_LABEL } from "@/lib/auth-types";
@@ -27,13 +26,11 @@ export default async function AppLayout({
   const deployment = readDeployment();
 
   return (
-    /* The shell isolates so the backdrop has a stacking context to sit in.
-       The band is the "page" variant: it announces the surface at the top and
-       is gone before any table reaches it. A photograph running the full height
-       of a console would be costume — docs/PRODUCT.md puts everything behind
-       /login in the product register, where design serves the work. */
-    <div className="relative isolate flex min-h-screen flex-col items-start md:flex-row">
-      <SkyBackdrop variant="page" />
+    /* No sky here. The console is the product register: a working surface read
+       across rather than looked at, and every gain in the sky's visibility came
+       straight out of the contrast budget of the small grey labels all over it.
+       The brand surfaces keep it; this one is paper. */
+    <div className="flex min-h-screen flex-col items-start md:flex-row">
 
       <Sidebar
         groups={navFor(session.role)}
