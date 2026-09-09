@@ -198,7 +198,7 @@ export default async function HelpPage() {
             steps={[
               "Open Clearances from the menu.",
               "Under “Give a clearance”, pick the person.",
-              "Pick the level — Admin, Manager, Auditor or User.",
+              "Pick the level — Restricted, Confidential, Secret or Top Secret.",
               "Choose how long it lasts: 30 days, 90 days or a year.",
               "Press “Give clearance”.",
             ]}

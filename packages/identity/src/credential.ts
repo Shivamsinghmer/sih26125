@@ -162,7 +162,7 @@ export async function verifyRoleCredential(
 
   const subject = vc.credentialSubject as { roleId?: unknown };
   const roleId = Number(subject.roleId);
-  if (!Number.isInteger(roleId) || roleId <= Role.None || roleId > Role.Admin) {
+  if (!Number.isInteger(roleId) || roleId <= Role.None || roleId > Role.TopSecret) {
     throw new Error(`Credential carries an invalid roleId: ${String(subject.roleId)}`);
   }
 

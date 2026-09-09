@@ -60,7 +60,7 @@ export function DashboardMockup() {
             <span>Requires</span>
           </div>
           {[
-            ["#1", "Priya Menon", "Manager"],
+            ["#1", "Priya Menon", "Secret"],
             ["#2", "K. Iyer", "Auditor"],
           ].map((row) => (
             <div
@@ -102,7 +102,7 @@ export function GateMockup() {
           <div className="flex items-baseline justify-between">
             <p className="text-[12px] text-[#17191c]">Priya Menon</p>
             <span className="rounded-full bg-[#17191c] px-2 py-0.5 text-[9px] text-white">
-              Manager · valid
+              Secret · valid
             </span>
           </div>
           <p className="mt-1.5 text-[10px] leading-relaxed text-[#616675]">
@@ -116,7 +116,7 @@ export function GateMockup() {
             <span className="font-mono text-[8px] text-[#7a4230]">RoleNeverGranted</span>
           </div>
           <p className="mt-1.5 text-[10px] leading-relaxed text-[#5d2a1a]">
-            No Manager credential. Not permitted to carry asset #1 out.
+            No Secret clearance. Not permitted to carry asset #1 out.
           </p>
         </div>
       </div>
@@ -128,8 +128,8 @@ export function GateMockup() {
 export function AuditMockup() {
   const rows = [
     { t: "00:56", c: "AssetToken", d: "Asset #1 minted to Priya Menon", accent: false },
-    { t: "00:55", c: "RoleRegistry", d: "Manager credential issued to Priya Menon", accent: false },
-    { t: "00:54", c: "AssetToken", d: "Transfer refused — no Manager credential", accent: true },
+    { t: "00:55", c: "RoleRegistry", d: "Secret clearance issued to Priya Menon", accent: false },
+    { t: "00:54", c: "AssetToken", d: "Transfer refused — no Secret clearance", accent: true },
     { t: "00:52", c: "RoleRegistry", d: "Auditor credential issued to K. Iyer", accent: false },
     { t: "00:51", c: "IdentityRegistry", d: "Identity registered for Rahul Nair", accent: false },
   ];

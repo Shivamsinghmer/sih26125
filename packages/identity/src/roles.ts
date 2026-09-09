@@ -1,5 +1,14 @@
 /**
- * The four business roles named by the problem statement.
+ * The clearance levels the Ministry of Defence uses.
+ *
+ * Restricted, Confidential, Secret and Top Secret are the levels the Security
+ * Manual for Licensed Defence Industries (DDP, revised June 2025) para 5.1.3
+ * applies to "documents and equipment" alike, which is why the same ladder
+ * grades a person and the item they want to carry.
+ *
+ * They replaced None/User/Auditor/Manager/Admin, which mixed clearance with
+ * authority. Authority — who may issue, revoke or inspect — is held as
+ * AccessControl roles on RoleRegistry instead.
  *
  * These numeric values MUST stay in lockstep with the `Role` enum in
  * `packages/contracts/contracts/RoleRegistry.sol`. A credential issued here
@@ -8,18 +17,18 @@
  */
 export enum Role {
   None = 0,
-  User = 1,
-  Auditor = 2,
-  Manager = 3,
-  Admin = 4,
+  Restricted = 1,
+  Confidential = 2,
+  Secret = 3,
+  TopSecret = 4,
 }
 
 export const ROLE_NAMES: Readonly<Record<Role, string>> = Object.freeze({
   [Role.None]: "None",
-  [Role.User]: "User",
-  [Role.Auditor]: "Auditor",
-  [Role.Manager]: "Manager",
-  [Role.Admin]: "Admin",
+  [Role.Restricted]: "Restricted",
+  [Role.Confidential]: "Confidential",
+  [Role.Secret]: "Secret",
+  [Role.TopSecret]: "Top Secret",
 });
 
 export function roleName(role: Role): string {

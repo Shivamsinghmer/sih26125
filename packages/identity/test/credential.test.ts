@@ -31,7 +31,7 @@ function baseInput(overrides: Partial<Parameters<typeof issueRoleCredential>[0]>
     issuerPrivateKey: ISSUER.privateKey,
     issuerAddress: ISSUER.address,
     subjectAddress: SUBJECT.address,
-    role: Role.Manager,
+    role: Role.Secret,
     chainId: CHAIN_ID,
     roleRegistryAddress: ROLE_REGISTRY,
     expiresAt: now() + 3600,
@@ -44,20 +44,20 @@ describe("role credentials", () => {
     const jwt = await issueRoleCredential(baseInput());
     const verified = await verifyRoleCredential(jwt);
 
-    expect(verified.role).toBe(Role.Manager);
+    expect(verified.role).toBe(Role.Secret);
     expect(verified.roleName).toBe("Manager");
     expect(verified.subjectAddress).toBe(SUBJECT.address.toLowerCase());
     expect(verified.issuerDid).toBe(didFromAddress(ISSUER.address, CHAIN_ID));
   });
 
   it("verifies with no network access, using only the identifier", async () => {
-    const jwt = await issueRoleCredential(baseInput({ role: Role.Auditor }));
+    const jwt = await issueRoleCredential(baseInput({ role: Role.Confidential }));
     // The offline resolver is the default, but pass it explicitly to make the
     // point of the test unambiguous: nothing here can reach a network.
     const verified = await verifyRoleCredential(jwt, {
       resolver: createOfflineEthrResolver(),
     });
-    expect(verified.role).toBe(Role.Auditor);
+    expect(verified.role).toBe(Role.Confidential);
   });
 
   it("carries the on-chain status anchor pointing at RoleRegistry", async () => {
@@ -67,7 +67,7 @@ describe("role credentials", () => {
     expect(verified.status.type).toBe("OnChainRoleRegistry2026");
     expect(verified.status.registry).toBe(ROLE_REGISTRY.toLowerCase());
     expect(verified.status.account).toBe(SUBJECT.address.toLowerCase());
-    expect(verified.status.roleId).toBe(Role.Manager);
+    expect(verified.status.roleId).toBe(Role.Secret);
   });
 
   it("rejects a credential signed by someone other than the stated issuer", async () => {
@@ -100,10 +100,10 @@ describe("role credentials", () => {
   });
 
   it("keeps roles distinct — a Manager credential does not read as Admin", async () => {
-    const jwt = await issueRoleCredential(baseInput({ role: Role.Manager }));
+    const jwt = await issueRoleCredential(baseInput({ role: Role.Secret }));
     const verified = await verifyRoleCredential(jwt);
-    expect(verified.role).not.toBe(Role.Admin);
-    expect(verified.status.roleId).toBe(Role.Manager);
+    expect(verified.role).not.toBe(Role.TopSecret);
+    expect(verified.status.roleId).toBe(Role.Secret);
   });
 });
 

@@ -29,26 +29,26 @@ const ENTRIES: Entry[] = [
   {
     id: "mint",
     event: "Asset registered",
-    detail: "Signal Analyser SN-8823 minted to Priya Menon, requiring a Manager credential to hold.",
+    detail: "Signal Analyser SN-8823 minted to Priya Menon, requiring Secret clearance to hold.",
     meta: "block 302 · AssetToken",
   },
   {
     id: "credential",
     event: "Credential issued",
-    detail: "Manager credential granted to Priya Menon by S. Raghavan, valid until 6 Oct 2026.",
+    detail: "Secret clearance granted to Priya Menon by S. Raghavan, valid until 6 Oct 2026.",
     meta: "block 304 · RoleRegistry",
   },
   {
     id: "blocked",
     event: "Transfer refused",
-    detail: "Rahul Nair was never issued a Manager credential. Reverted in AssetToken._update.",
+    detail: "Rahul Nair was never issued a Secret clearance. Reverted in AssetToken._update.",
     meta: "TransferBlockedRoleNeverGranted",
     refusal: true,
   },
   {
     id: "revoked",
     event: "Credential revoked",
-    detail: "Priya Menon's Manager credential withdrawn — one write, visible to every verifier.",
+    detail: "Priya Menon's Secret clearance withdrawn — one write, visible to every verifier.",
     meta: "block 311 · RoleRegistry",
   },
 ];

@@ -91,8 +91,8 @@ const latest = await publicClient.getBlock();
 const expiry = BigInt(Number(latest.timestamp) + 30 * 86_400);
 
 for (const [name, account, role] of [
-  ["Priya Menon", priya, Role.Manager],
-  ["Rahul Nair", rahul, Role.User],
+  ["Priya Menon", priya, Role.Secret],
+  ["Rahul Nair", rahul, Role.Restricted],
 ] as const) {
   try {
     await send(admin, deployment.contracts.IdentityRegistry, IdentityRegistryArtifact.abi, "register", [
@@ -112,7 +112,7 @@ for (const [name, account, role] of [
 
 const mint = await send(admin, deployment.contracts.AssetToken, AssetTokenArtifact.abi, "mint", [
   priya.address,
-  Role.Manager,
+  Role.Secret,
   `0x${"a3".repeat(32)}`,
 ]);
 console.log(`  ✓ Asset minted in block ${mint.blockNumber}`);

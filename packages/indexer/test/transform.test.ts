@@ -13,7 +13,7 @@ const RAHUL = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
 const NEW_KEY = "0x90F79bf6EB2c4f870365E785982E1f101E93b906";
 const ZERO = "0x0000000000000000000000000000000000000000";
 
-const Role = { User: 1, Manager: 3 } as const;
+const Role = { Restricted: 1, Secret: 3 } as const;
 
 let seq = 0;
 function event(
@@ -63,7 +63,7 @@ describe("projecting credentials", () => {
   it("records a grant with its expiry", () => {
     const p = apply(
       emptyProjection(),
-      event("BusinessRoleGranted", { account: PRIYA, role: Role.Manager, expiry: "1800000000" }),
+      event("BusinessRoleGranted", { account: PRIYA, role: Role.Secret, expiry: "1800000000" }),
     );
     const grant = p.roleGrants.get(`${PRIYA.toLowerCase()}:3`);
     expect(grant?.expiry).toBe(1_800_000_000);
@@ -73,9 +73,9 @@ describe("projecting credentials", () => {
   it("marks a revocation without losing the expiry", () => {
     let p = apply(
       emptyProjection(),
-      event("BusinessRoleGranted", { account: PRIYA, role: Role.Manager, expiry: "1800000000" }),
+      event("BusinessRoleGranted", { account: PRIYA, role: Role.Secret, expiry: "1800000000" }),
     );
-    p = apply(p, event("BusinessRoleRevoked", { account: PRIYA, role: Role.Manager }));
+    p = apply(p, event("BusinessRoleRevoked", { account: PRIYA, role: Role.Secret }));
 
     const grant = p.roleGrants.get(`${PRIYA.toLowerCase()}:3`);
     expect(grant?.revoked).toBe(true);
@@ -85,12 +85,12 @@ describe("projecting credentials", () => {
   it("clears a revocation when the role is granted again, matching the contract", () => {
     let p = apply(
       emptyProjection(),
-      event("BusinessRoleGranted", { account: PRIYA, role: Role.Manager, expiry: "100" }),
+      event("BusinessRoleGranted", { account: PRIYA, role: Role.Secret, expiry: "100" }),
     );
-    p = apply(p, event("BusinessRoleRevoked", { account: PRIYA, role: Role.Manager }));
+    p = apply(p, event("BusinessRoleRevoked", { account: PRIYA, role: Role.Secret }));
     p = apply(
       p,
-      event("BusinessRoleGranted", { account: PRIYA, role: Role.Manager, expiry: "200" }),
+      event("BusinessRoleGranted", { account: PRIYA, role: Role.Secret, expiry: "200" }),
     );
 
     const grant = p.roleGrants.get(`${PRIYA.toLowerCase()}:3`);
@@ -101,10 +101,10 @@ describe("projecting credentials", () => {
   it("keeps a person's roles independent of one another", () => {
     let p = apply(
       emptyProjection(),
-      event("BusinessRoleGranted", { account: PRIYA, role: Role.Manager, expiry: "100" }),
+      event("BusinessRoleGranted", { account: PRIYA, role: Role.Secret, expiry: "100" }),
     );
-    p = apply(p, event("BusinessRoleGranted", { account: PRIYA, role: Role.User, expiry: "100" }));
-    p = apply(p, event("BusinessRoleRevoked", { account: PRIYA, role: Role.Manager }));
+    p = apply(p, event("BusinessRoleGranted", { account: PRIYA, role: Role.Restricted, expiry: "100" }));
+    p = apply(p, event("BusinessRoleRevoked", { account: PRIYA, role: Role.Secret }));
 
     expect(p.roleGrants.get(`${PRIYA.toLowerCase()}:3`)?.revoked).toBe(true);
     expect(p.roleGrants.get(`${PRIYA.toLowerCase()}:1`)?.revoked).toBe(false);
@@ -118,7 +118,7 @@ describe("projecting custody", () => {
       event("AssetMinted", {
         tokenId: "1",
         to: PRIYA,
-        requiredRole: Role.Manager,
+        requiredRole: Role.Secret,
         metadataHash: "0xa3",
       }),
     );
@@ -184,9 +184,9 @@ describe("the index is rebuildable", () => {
   it("replaying out-of-order events lands in the same state as in-order", () => {
     const events = [
       event("AssetMinted", { tokenId: "1", to: PRIYA, requiredRole: 3, metadataHash: "0xa3" }),
-      event("BusinessRoleGranted", { account: RAHUL, role: Role.Manager, expiry: "500" }),
+      event("BusinessRoleGranted", { account: RAHUL, role: Role.Secret, expiry: "500" }),
       event("Transfer", { tokenId: "1", from: PRIYA, to: RAHUL }),
-      event("BusinessRoleRevoked", { account: PRIYA, role: Role.Manager }),
+      event("BusinessRoleRevoked", { account: PRIYA, role: Role.Secret }),
     ];
 
     const inOrder = replay(events);
@@ -202,7 +202,7 @@ describe("the index is rebuildable", () => {
   it("replaying twice is identical to replaying once", () => {
     const events = [
       event("IdentityRegistered", { account: PRIYA, did: "did:x" }),
-      event("BusinessRoleGranted", { account: PRIYA, role: Role.Manager, expiry: "500" }),
+      event("BusinessRoleGranted", { account: PRIYA, role: Role.Secret, expiry: "500" }),
       event("AssetMinted", { tokenId: "1", to: PRIYA, requiredRole: 3, metadataHash: "0xa3" }),
     ];
 

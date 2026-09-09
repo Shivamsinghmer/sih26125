@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { createPublicClient, createWalletClient, http, type Address, type Hex } from "viem";
+import { createPublicClient, createWalletClient, http, type Address, type Hex, keccak256, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
 
@@ -27,25 +27,27 @@ const PEOPLE = [
   {
     key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
     name: "S. Raghavan",
-    role: Role.Admin,
+    role: Role.TopSecret,
   },
   {
     key: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
     name: "Priya Menon",
-    role: Role.Manager,
+    role: Role.Secret,
   },
   {
     key: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
     name: "Rahul Nair",
-    role: Role.User,
+    role: Role.Restricted,
   },
   {
-    // Without an Auditor on chain nobody can sign into /audit — the console
-    // reads its role from RoleRegistry, so an unheld role is an unreachable
-    // surface.
     key: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
     name: "K. Iyer",
-    role: Role.Auditor,
+    role: Role.Confidential,
+    // Internal Audit performs one of the two physical verifications the manual
+    // requires each year, so this account needs the authority to inspect —
+    // which is a different fact from the level it is cleared to hold. Without
+    // it /audit is a surface nobody can reach.
+    inspector: true,
   },
 ] as const;
 
@@ -95,13 +97,23 @@ for (const person of PEOPLE) {
     expiry,
   ]);
 
-  console.log(`✓ ${person.name} — identity registered, granted ${Role[person.role]}`);
+  if ("inspector" in person && person.inspector) {
+    await send(deployment.contracts.RoleRegistry, RoleRegistryArtifact.abi, "grantRole", [
+      keccak256(toHex("AUDITOR_ROLE")),
+      account.address,
+    ]);
+  }
+
+  console.log(
+    `✓ ${person.name} — identity registered, cleared to ${Role[person.role]}` +
+      ("inspector" in person && person.inspector ? ", authorised to inspect" : ""),
+  );
 }
 
 const priya = privateKeyToAccount(PEOPLE[1].key as Hex);
 await send(deployment.contracts.AssetToken, AssetTokenArtifact.abi, "mint", [
   priya.address,
-  Role.Manager,
+  Role.Secret,
   `0x${"a3".repeat(32)}`,
 ]);
 console.log("✓ Signal Analyser SN-8823 minted as asset #1 to Priya Menon");

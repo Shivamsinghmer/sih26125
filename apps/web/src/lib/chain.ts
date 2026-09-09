@@ -138,10 +138,10 @@ export function walletFor(persona: Persona) {
 
 /** Roles offered in the console, in the order the problem statement names them. */
 export const ASSIGNABLE_ROLES = [
-  Role.Admin,
-  Role.Manager,
-  Role.Auditor,
-  Role.User,
+  Role.TopSecret,
+  Role.Secret,
+  Role.Confidential,
+  Role.Restricted,
 ] as const;
 
 export function shortAddress(address: string): string {

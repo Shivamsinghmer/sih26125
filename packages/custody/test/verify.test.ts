@@ -54,8 +54,8 @@ async function makeBundle(
     },
     asset: {
       tokenId: "1",
-      requiredRole: Role.Manager,
-      requiredRoleLabel: roleName(Role.Manager),
+      requiredRole: Role.Secret,
+      requiredRoleLabel: roleName(Role.Secret),
       metadataHash: `0x${"a3".repeat(32)}`,
       mintedAt: NOW - 7200,
     },
@@ -68,14 +68,14 @@ async function makeBundle(
         transactionHash: `0x${"11".repeat(32)}`,
       },
     ],
-    credentials: credentials ?? [await credentialFor(PRIYA, Role.Manager)],
+    credentials: credentials ?? [await credentialFor(PRIYA, Role.Secret)],
     status: {
       takenAtBlock: 12,
       takenAt: NOW - 600,
       entries: [
         {
           account: PRIYA,
-          role: Role.Manager,
+          role: Role.Secret,
           roleLabel: "Manager",
           valid: true,
           reason: "valid",
@@ -220,7 +220,7 @@ describe("chain of custody", () => {
 describe("the holder's credential", () => {
   it("fails when the holder has no credential in the bundle", async () => {
     const bundle = await signBundle(
-      await makeBundle({}, [await credentialFor(RAHUL, Role.Manager)]),
+      await makeBundle({}, [await credentialFor(RAHUL, Role.Secret)]),
       { issuerPrivateKey: ISSUER.privateKey, issuerAddress: ISSUER.address },
     );
     const report = await verifyBundle(bundle, { now: NOW });
@@ -240,7 +240,7 @@ describe("the holder's credential", () => {
           entries: [
             {
               account: PRIYA,
-              role: Role.Manager,
+              role: Role.Secret,
               roleLabel: "Manager",
               valid: false,
               reason: "revoked",
@@ -264,7 +264,7 @@ describe("the holder's credential", () => {
       issuerPrivateKey: ISSUER.privateKey,
       issuerAddress: ISSUER.address,
       subjectAddress: PRIYA,
-      role: Role.Manager,
+      role: Role.Secret,
       chainId: CHAIN_ID,
       roleRegistryAddress: "0xdeadbeef00000000000000000000000000000000",
       expiresAt: EXPIRY,

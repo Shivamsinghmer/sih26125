@@ -28,7 +28,7 @@ describe("decoding blocked transfers", () => {
   it("explains an expired credential, naming the role and the date", () => {
     const data = encode("TransferBlockedRoleExpired", [
       RECIPIENT,
-      Role.Manager,
+      Role.Secret,
       BigInt(EXPIRY_TS),
     ]);
     const explained = decodeContractErrorData(data);
@@ -38,12 +38,12 @@ describe("decoding blocked transfers", () => {
     expect(explained.detail).toBe(
       "Their Manager clearance ran out on 12 Aug 2026.",
     );
-    expect(explained.requiredRole).toBe(Role.Manager);
+    expect(explained.requiredRole).toBe(Role.Secret);
     expect(explained.expiredAt?.getTime()).toBe(EXPIRY_TS * 1000);
   });
 
   it("explains a revoked credential", () => {
-    const data = encode("TransferBlockedRoleRevoked", [RECIPIENT, Role.Manager]);
+    const data = encode("TransferBlockedRoleRevoked", [RECIPIENT, Role.Secret]);
     const explained = decodeContractErrorData(data);
 
     expect(explained.reason).toBe("role-revoked");
@@ -53,7 +53,7 @@ describe("decoding blocked transfers", () => {
   });
 
   it("explains a credential that was never issued", () => {
-    const data = encode("TransferBlockedRoleNeverGranted", [RECIPIENT, Role.Manager]);
+    const data = encode("TransferBlockedRoleNeverGranted", [RECIPIENT, Role.Secret]);
     const explained = decodeContractErrorData(data);
 
     expect(explained.reason).toBe("role-never-granted");
@@ -65,13 +65,13 @@ describe("decoding blocked transfers", () => {
   it("distinguishes the three blocked reasons from one another", () => {
     const reasons = [
       decodeContractErrorData(
-        encode("TransferBlockedRoleNeverGranted", [RECIPIENT, Role.User]),
+        encode("TransferBlockedRoleNeverGranted", [RECIPIENT, Role.Restricted]),
       ).reason,
       decodeContractErrorData(
-        encode("TransferBlockedRoleRevoked", [RECIPIENT, Role.User]),
+        encode("TransferBlockedRoleRevoked", [RECIPIENT, Role.Restricted]),
       ).reason,
       decodeContractErrorData(
-        encode("TransferBlockedRoleExpired", [RECIPIENT, Role.User, BigInt(EXPIRY_TS)]),
+        encode("TransferBlockedRoleExpired", [RECIPIENT, Role.Restricted, BigInt(EXPIRY_TS)]),
       ).reason,
     ];
     expect(new Set(reasons).size).toBe(3);
@@ -115,7 +115,7 @@ describe("resilience", () => {
   });
 
   it("finds revert data nested in a viem-style cause chain", () => {
-    const data = encode("TransferBlockedRoleRevoked", [RECIPIENT, Role.Manager]);
+    const data = encode("TransferBlockedRoleRevoked", [RECIPIENT, Role.Secret]);
     const error = { cause: { cause: { raw: data } } };
     expect(explainContractError(error).reason).toBe("role-revoked");
   });

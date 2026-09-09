@@ -9,12 +9,28 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 /// AssetToken so a revocation or a batch reassignment never requires touching, or
 /// migrating, the token contract itself.
 contract RoleRegistry is AccessControl {
+    /**
+     * The clearance a person holds, and the clearance an item requires.
+     *
+     * These are the levels the Ministry of Defence actually uses. The Security
+     * Manual for Licensed Defence Industries (DDP, revised June 2025) para
+     * 5.1.3 classifies "documents and equipment" on exactly this ladder, and
+     * the ordering is load-bearing: Secret outranks Confidential.
+     *
+     * These used to be None/User/Auditor/Manager/Admin, which conflated two
+     * different things — what a person is cleared to hold, and what a person is
+     * authorised to do. Authority lives in the AccessControl roles below, where
+     * it belongs; a clearance is not a job.
+     *
+     * The numeric values are unchanged by the rename, so credentials issued
+     * against the old names still decode to the same level.
+     */
     enum Role {
         None,
-        User,
-        Auditor,
-        Manager,
-        Admin
+        Restricted,
+        Confidential,
+        Secret,
+        TopSecret
     }
 
     enum InvalidReason {
@@ -28,6 +44,12 @@ contract RoleRegistry is AccessControl {
     /// so no single account is required to hold both.
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
+    /// @dev Read-only inspection. The manual requires two physical verifications
+    /// of classified holdings a calendar year, one of them by the Company Chief
+    /// Security Officer; whoever performs them needs to see everything and
+    /// change nothing. Separate from clearance: an inspector's authority to look
+    /// is not the same fact as the level they are cleared to hold.
+    bytes32 public constant AUDITOR_ROLE = keccak256("AUDITOR_ROLE");
 
     struct Grant {
         uint64 expiry; // unix seconds; 0 means never granted
@@ -48,6 +70,7 @@ contract RoleRegistry is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ISSUER_ROLE, admin);
         _grantRole(REVOKER_ROLE, admin);
+        _grantRole(AUDITOR_ROLE, admin);
     }
 
     function grantBusinessRole(address account, Role role, uint64 expiry) external onlyRole(ISSUER_ROLE) {

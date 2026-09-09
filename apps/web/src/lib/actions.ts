@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseEventLogs, type Hex } from "viem";
+import { keccak256, parseEventLogs, toHex, type Hex } from "viem";
 
 import { assetTokenAbi, explainContractError, identityRegistryAbi, roleRegistryAbi } from "@sih26125/chain";
 import { Role, didFromAddress } from "@sih26125/identity";
@@ -23,6 +23,9 @@ import {
 
 /** The item the demo opens on, and the one the landing page names. */
 const SEED_EQUIPMENT = { name: "Signal Analyser", serial: "SN-8823" };
+
+/** keccak256("AUDITOR_ROLE") — read-only inspection authority on RoleRegistry. */
+const AUDITOR_ROLE = keccak256(toHex("AUDITOR_ROLE"));
 
 const DAY = 86_400;
 const now = () => Math.floor(Date.now() / 1000);
@@ -178,25 +181,31 @@ export async function seedDemo(): Promise<ActionResult> {
 
     await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantBusinessRole", [
       admin.address,
-      Role.Admin,
+      Role.TopSecret,
       expiry,
     ]);
     await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantBusinessRole", [
       manager.address,
-      Role.Manager,
+      Role.Secret,
       expiry,
     ]);
     await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantBusinessRole", [
       user.address,
-      Role.User,
+      Role.Restricted,
       expiry,
     ]);
-    // Without this the /audit surface is unreachable: the console reads its
-    // role from RoleRegistry, so a role nobody holds is a screen nobody opens.
     await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantBusinessRole", [
       auditor.address,
-      Role.Auditor,
+      Role.Confidential,
       expiry,
+    ]);
+    // Clearance says what the auditor may hold; it does not open the replay.
+    // That is AUDITOR_ROLE, and without this grant /audit is a screen nobody
+    // can reach — the console derives what you may open from authority now,
+    // not from how highly you are cleared.
+    await send(admin, deployment.contracts.RoleRegistry, roleRegistryAbi, "grantRole", [
+      AUDITOR_ROLE,
+      auditor.address,
     ]);
 
     // The seeded item is named, because the landing page advertises a Signal
@@ -207,7 +216,7 @@ export async function seedDemo(): Promise<ActionResult> {
       deployment.contracts.AssetToken,
       assetTokenAbi,
       "mint",
-      [manager.address, Role.Manager, metadataHashFor(SEED_EQUIPMENT)],
+      [manager.address, Role.Secret, metadataHashFor(SEED_EQUIPMENT)],
     );
 
     const [minted] = parseEventLogs({

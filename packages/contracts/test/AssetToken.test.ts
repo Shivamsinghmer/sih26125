@@ -5,10 +5,10 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 // RoleRegistry.Role enum ordinals
 const Role = {
   None: 0,
-  User: 1,
-  Auditor: 2,
-  Manager: 3,
-  Admin: 4,
+  Restricted: 1,
+  Confidential: 2,
+  Secret: 3,
+  TopSecret: 4,
 } as const;
 
 const METADATA_HASH = ethers.keccak256(ethers.toUtf8Bytes("SIGNAL-ANALYSER-SN-8823"));
@@ -30,9 +30,9 @@ async function deployFixture() {
   const oneYearOut = (await time.latest()) + 365 * 24 * 60 * 60;
 
   // manager and otherManager hold Manager; plainUser holds only User; stranger holds nothing.
-  await roleRegistry.grantBusinessRole(manager.address, Role.Manager, oneYearOut);
-  await roleRegistry.grantBusinessRole(otherManager.address, Role.Manager, oneYearOut);
-  await roleRegistry.grantBusinessRole(plainUser.address, Role.User, oneYearOut);
+  await roleRegistry.grantBusinessRole(manager.address, Role.Secret, oneYearOut);
+  await roleRegistry.grantBusinessRole(otherManager.address, Role.Secret, oneYearOut);
+  await roleRegistry.grantBusinessRole(plainUser.address, Role.Restricted, oneYearOut);
 
   return { roleRegistry, assetToken, admin, manager, otherManager, plainUser, stranger, oneYearOut };
 }
@@ -46,24 +46,24 @@ describe("AssetToken", () => {
     it("mints to a recipient holding no role at all", async () => {
       const { assetToken, stranger } = await loadFixture(deployFixture);
 
-      await expect(assetToken.mint(stranger.address, Role.Manager, METADATA_HASH)).to.not.be.reverted;
+      await expect(assetToken.mint(stranger.address, Role.Secret, METADATA_HASH)).to.not.be.reverted;
       expect(await assetToken.ownerOf(1)).to.equal(stranger.address);
     });
 
     it("mints to a recipient whose role is lower than the asset requires", async () => {
       const { assetToken, plainUser } = await loadFixture(deployFixture);
 
-      await expect(assetToken.mint(plainUser.address, Role.Manager, METADATA_HASH)).to.not.be.reverted;
+      await expect(assetToken.mint(plainUser.address, Role.Secret, METADATA_HASH)).to.not.be.reverted;
       expect(await assetToken.ownerOf(1)).to.equal(plainUser.address);
     });
 
     it("records the required role and metadata hash at mint time", async () => {
       const { assetToken, manager } = await loadFixture(deployFixture);
 
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       const asset = await assetToken.assets(1);
-      expect(asset.requiredRole).to.equal(Role.Manager);
+      expect(asset.requiredRole).to.equal(Role.Secret);
       expect(asset.metadataHash).to.equal(METADATA_HASH);
     });
   });
@@ -71,7 +71,7 @@ describe("AssetToken", () => {
   describe("credential-gated transfers", () => {
     it("allows a transfer when the recipient holds the required role", async () => {
       const { assetToken, manager, otherManager } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await expect(
         assetToken.connect(manager).transferFrom(manager.address, otherManager.address, 1),
@@ -84,56 +84,56 @@ describe("AssetToken", () => {
     // only the User role, and the chain refuses.
     it("reverts when the recipient holds a role but not the required one", async () => {
       const { assetToken, manager, plainUser } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await expect(assetToken.connect(manager).transferFrom(manager.address, plainUser.address, 1))
         .to.be.revertedWithCustomError(assetToken, "TransferBlockedRoleNeverGranted")
-        .withArgs(plainUser.address, Role.Manager);
+        .withArgs(plainUser.address, Role.Secret);
 
       expect(await assetToken.ownerOf(1)).to.equal(manager.address);
     });
 
     it("reverts when the recipient holds no role at all", async () => {
       const { assetToken, manager, stranger } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await expect(assetToken.connect(manager).transferFrom(manager.address, stranger.address, 1))
         .to.be.revertedWithCustomError(assetToken, "TransferBlockedRoleNeverGranted")
-        .withArgs(stranger.address, Role.Manager);
+        .withArgs(stranger.address, Role.Secret);
     });
 
     // The demo's step 4: revoking propagates immediately to every future transfer.
     it("reverts with the revoked reason after the recipient's role is revoked", async () => {
       const { roleRegistry, assetToken, manager, otherManager } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
-      await roleRegistry.revokeBusinessRole(otherManager.address, Role.Manager);
+      await roleRegistry.revokeBusinessRole(otherManager.address, Role.Secret);
 
       await expect(assetToken.connect(manager).transferFrom(manager.address, otherManager.address, 1))
         .to.be.revertedWithCustomError(assetToken, "TransferBlockedRoleRevoked")
-        .withArgs(otherManager.address, Role.Manager);
+        .withArgs(otherManager.address, Role.Secret);
     });
 
     // The expiry timestamp is carried in the error so the UI can render
     // "expired 12 Aug 2026" rather than a generic failure.
     it("reverts with the expiry timestamp once the recipient's role has expired", async () => {
       const { assetToken, manager, otherManager, oneYearOut } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await time.increaseTo(oneYearOut + 1);
 
       await expect(assetToken.connect(manager).transferFrom(manager.address, otherManager.address, 1))
         .to.be.revertedWithCustomError(assetToken, "TransferBlockedRoleExpired")
-        .withArgs(otherManager.address, Role.Manager, oneYearOut);
+        .withArgs(otherManager.address, Role.Secret, oneYearOut);
     });
   });
 
   describe("batchReassign", () => {
     it("moves every asset from a departing holder in one transaction", async () => {
       const { assetToken, manager, otherManager } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await assetToken.batchReassign(manager.address, otherManager.address, [1, 2, 3]);
 
@@ -144,16 +144,16 @@ describe("AssetToken", () => {
 
     it("still enforces the role check on the reassignment target", async () => {
       const { assetToken, manager, plainUser } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await expect(assetToken.batchReassign(manager.address, plainUser.address, [1]))
         .to.be.revertedWithCustomError(assetToken, "TransferBlockedRoleNeverGranted")
-        .withArgs(plainUser.address, Role.Manager);
+        .withArgs(plainUser.address, Role.Secret);
     });
 
     it("reverts if an asset is not owned by the stated holder", async () => {
       const { assetToken, manager, otherManager, plainUser } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await expect(assetToken.batchReassign(plainUser.address, otherManager.address, [1]))
         .to.be.revertedWithCustomError(assetToken, "UnexpectedOwner")
@@ -162,7 +162,7 @@ describe("AssetToken", () => {
 
     it("rejects a caller without the issuer role", async () => {
       const { assetToken, manager, otherManager } = await loadFixture(deployFixture);
-      await assetToken.mint(manager.address, Role.Manager, METADATA_HASH);
+      await assetToken.mint(manager.address, Role.Secret, METADATA_HASH);
 
       await expect(
         assetToken.connect(manager).batchReassign(manager.address, otherManager.address, [1]),
@@ -175,7 +175,7 @@ describe("AssetToken", () => {
       const { assetToken, manager } = await loadFixture(deployFixture);
 
       await expect(
-        assetToken.connect(manager).mint(manager.address, Role.Manager, METADATA_HASH),
+        assetToken.connect(manager).mint(manager.address, Role.Secret, METADATA_HASH),
       ).to.be.revertedWithCustomError(assetToken, "AccessControlUnauthorizedAccount");
     });
   });

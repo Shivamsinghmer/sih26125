@@ -47,7 +47,7 @@ const hash = await adminWallet.writeContract({
   address: deployment.contracts.RoleRegistry,
   abi: RoleRegistryArtifact.abi as never,
   functionName: "grantBusinessRole",
-  args: [priya.address, Role.Manager, expiresAt] as never,
+  args: [priya.address, Role.Secret, expiresAt] as never,
 });
 await publicClient.waitForTransactionReceipt({ hash });
 console.log(`✓ Priya re-granted Manager, valid until ${new Date(Number(expiresAt) * 1000).toDateString()}`);

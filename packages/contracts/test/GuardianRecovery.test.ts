@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 
-const Role = { None: 0, User: 1, Auditor: 2, Manager: 3, Admin: 4 } as const;
+const Role = { None: 0, Restricted: 1, Confidential: 2, Secret: 3, TopSecret: 4 } as const;
 
 const TIMELOCK = 48 * 60 * 60; // 48 hours
 
@@ -35,7 +35,7 @@ async function deployFixture() {
 
   await identityRegistry.register(employee.address, `did:ethr:0x7a69:${employee.address.toLowerCase()}`);
   const oneYearOut = (await time.latest()) + 365 * 24 * 60 * 60;
-  await roleRegistry.grantBusinessRole(employee.address, Role.Manager, oneYearOut);
+  await roleRegistry.grantBusinessRole(employee.address, Role.Secret, oneYearOut);
 
   await recovery.configureGuardians(
     employee.address,
@@ -123,7 +123,7 @@ describe("GuardianRecovery", () => {
       await recovery.connect(g2).approveRecovery(employee.address);
 
       await expect(
-        recovery.executeRecovery(employee.address, [Role.Manager]),
+        recovery.executeRecovery(employee.address, [Role.Secret]),
       ).to.be.revertedWithCustomError(recovery, "TimelockNotElapsed");
     });
 
@@ -133,7 +133,7 @@ describe("GuardianRecovery", () => {
       await time.increase(TIMELOCK * 10);
 
       await expect(
-        recovery.executeRecovery(employee.address, [Role.Manager]),
+        recovery.executeRecovery(employee.address, [Role.Secret]),
       ).to.be.revertedWithCustomError(recovery, "QuorumNotReached");
     });
   });
@@ -151,7 +151,7 @@ describe("GuardianRecovery", () => {
 
       await time.increase(TIMELOCK + 1);
       await expect(
-        recovery.executeRecovery(employee.address, [Role.Manager]),
+        recovery.executeRecovery(employee.address, [Role.Secret]),
       ).to.be.revertedWithCustomError(recovery, "NoActiveRequest");
     });
 
@@ -173,7 +173,7 @@ describe("GuardianRecovery", () => {
       await recovery.connect(g1).proposeRecovery(employee.address, newKey.address);
       await recovery.connect(g2).approveRecovery(employee.address);
       await time.increase(TIMELOCK + 1);
-      await recovery.executeRecovery(employee.address, [Role.Manager]);
+      await recovery.executeRecovery(employee.address, [Role.Secret]);
 
       const after = await identityRegistry.get(newKey.address);
       expect(after.did).to.equal(before.did);
@@ -190,9 +190,9 @@ describe("GuardianRecovery", () => {
       await recovery.connect(g1).proposeRecovery(employee.address, newKey.address);
       await recovery.connect(g2).approveRecovery(employee.address);
       await time.increase(TIMELOCK + 1);
-      await recovery.executeRecovery(employee.address, [Role.Manager]);
+      await recovery.executeRecovery(employee.address, [Role.Secret]);
 
-      const [valid, , expiry] = await roleRegistry.checkRole(newKey.address, Role.Manager);
+      const [valid, , expiry] = await roleRegistry.checkRole(newKey.address, Role.Secret);
       expect(valid).to.equal(true);
       // Recovery must not be a way to quietly extend a credential.
       expect(expiry).to.equal(oneYearOut);
@@ -205,9 +205,9 @@ describe("GuardianRecovery", () => {
       await recovery.connect(g1).proposeRecovery(employee.address, newKey.address);
       await recovery.connect(g2).approveRecovery(employee.address);
       await time.increase(TIMELOCK + 1);
-      await recovery.executeRecovery(employee.address, [Role.Manager]);
+      await recovery.executeRecovery(employee.address, [Role.Secret]);
 
-      const [valid] = await roleRegistry.checkRole(employee.address, Role.Manager);
+      const [valid] = await roleRegistry.checkRole(employee.address, Role.Secret);
       expect(valid).to.equal(false);
     });
 
@@ -216,10 +216,10 @@ describe("GuardianRecovery", () => {
       await recovery.connect(g1).proposeRecovery(employee.address, newKey.address);
       await recovery.connect(g2).approveRecovery(employee.address);
       await time.increase(TIMELOCK + 1);
-      await recovery.executeRecovery(employee.address, [Role.Manager]);
+      await recovery.executeRecovery(employee.address, [Role.Secret]);
 
       await expect(
-        recovery.executeRecovery(employee.address, [Role.Manager]),
+        recovery.executeRecovery(employee.address, [Role.Secret]),
       ).to.be.revertedWithCustomError(recovery, "NoActiveRequest");
     });
 
@@ -229,7 +229,7 @@ describe("GuardianRecovery", () => {
       await recovery.connect(g2).approveRecovery(employee.address);
       await time.increase(TIMELOCK + 1);
 
-      await expect(recovery.executeRecovery(employee.address, [Role.Manager]))
+      await expect(recovery.executeRecovery(employee.address, [Role.Secret]))
         .to.emit(recovery, "RecoveryExecuted")
         .withArgs(employee.address, newKey.address);
     });

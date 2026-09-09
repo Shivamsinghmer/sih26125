@@ -128,7 +128,7 @@ async function main() {
   const expiresAt = now() + 24 * HOUR;
   await write(roleRegistry, RoleRegistryArtifact.abi, "grantBusinessRole", [
     employee.address,
-    Role.Manager,
+    Role.Secret,
     BigInt(expiresAt),
   ]);
   ok("Manager role anchored in RoleRegistry");
@@ -137,7 +137,7 @@ async function main() {
     issuerPrivateKey: ACCOUNTS.admin,
     issuerAddress: admin.address,
     subjectAddress: employee.address,
-    role: Role.Manager,
+    role: Role.Secret,
     chainId: hardhat.id,
     roleRegistryAddress: roleRegistry,
     expiresAt,
@@ -150,7 +150,7 @@ async function main() {
   await write(identityRegistry, IdentityRegistryArtifact.abi, "register", [colleague.address, colleagueDid]);
   await write(roleRegistry, RoleRegistryArtifact.abi, "grantBusinessRole", [
     colleague.address,
-    Role.User,
+    Role.Restricted,
     BigInt(expiresAt),
   ]);
   ok(`Colleague registered holding only the User role: ${colleague.address}`);
@@ -162,7 +162,7 @@ async function main() {
   const metadataHash = `0x${"a3".repeat(32)}` as Hex;
   await write(assetToken, AssetTokenArtifact.abi, "mint", [
     employee.address,
-    Role.Manager,
+    Role.Secret,
     metadataHash,
   ]);
   const owner = await publicClient.readContract({
@@ -202,14 +202,14 @@ async function main() {
 
   await write(roleRegistry, RoleRegistryArtifact.abi, "revokeBusinessRole", [
     employee.address,
-    Role.Manager,
+    Role.Secret,
   ]);
   ok("Revocation written on chain — a single transaction");
 
   // Grant the colleague Manager so the *only* thing failing is the revoked holder.
   await write(roleRegistry, RoleRegistryArtifact.abi, "grantBusinessRole", [
     colleague.address,
-    Role.Manager,
+    Role.Secret,
     BigInt(expiresAt),
   ]);
 

@@ -64,7 +64,7 @@ const expiry = BigInt(Math.floor(Date.now() / 1000) + 30 * 86_400);
 
 await send(admin, deployment.contracts.RoleRegistry, RoleRegistryArtifact.abi, "grantBusinessRole", [
   rahul.address,
-  Role.Manager,
+  Role.Secret,
   expiry,
 ]);
 console.log("✓ Rahul granted Manager");
@@ -78,7 +78,7 @@ console.log("✓ Asset #1 transferred Priya → Rahul (the allowed case)");
 
 await send(admin, deployment.contracts.RoleRegistry, RoleRegistryArtifact.abi, "revokeBusinessRole", [
   priya.address,
-  Role.Manager,
+  Role.Secret,
 ]);
 console.log("✓ Priya's Manager credential revoked");
 

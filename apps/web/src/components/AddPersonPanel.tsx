@@ -8,10 +8,10 @@ import { ActionResultCard } from "./ActionResultCard";
 import { Field, PillButton, Select } from "./ui";
 
 const ROLE_OPTIONS = [
-  { value: 3, label: "Manager" },
-  { value: 2, label: "Auditor" },
-  { value: 1, label: "User" },
-  { value: 4, label: "Admin" },
+  { value: 3, label: "Secret" },
+  { value: 2, label: "Confidential" },
+  { value: 1, label: "Restricted" },
+  { value: 4, label: "Top Secret" },
   { value: 0, label: "No clearance yet" },
 ];
 

@@ -8,11 +8,19 @@ import { ActionResultCard } from "./ActionResultCard";
 import { Field, PillButton, Select } from "./ui";
 import type { PersonaOption } from "./TransferPanel";
 
+/**
+ * The clearance ladder, highest first.
+ *
+ * These are the levels the Security Manual for Licensed Defence Industries
+ * (para 5.1.3) applies to documents and equipment alike. Secret is described
+ * there as "the highest classification normally used"; Top Secret is to be
+ * "used with great reserve", which is why it is offered but not the default.
+ */
 export const ROLE_OPTIONS = [
-  { value: 4, label: "Admin" },
-  { value: 3, label: "Manager" },
-  { value: 2, label: "Auditor" },
-  { value: 1, label: "User" },
+  { value: 4, label: "Top Secret" },
+  { value: 3, label: "Secret" },
+  { value: 2, label: "Confidential" },
+  { value: 1, label: "Restricted" },
 ];
 
 type RoleAction = (prev: ActionResult, formData: FormData) => Promise<ActionResult>;

@@ -15,7 +15,7 @@ import { allErrorsAbi } from "./abi.js";
  * when), and a require-string carries only prose.
  *
  * The sentences are written for the person the refusal happens to, not for the
- * person who wrote the contract. "They have never been given a Manager
+ * person who wrote the contract. "They have never been given a Secret
  * clearance" is the same fact as `TransferBlockedRoleNeverGranted`, and it is
  * the one a stores officer can act on. The decoded error name still travels
  * alongside, for whoever is diagnosing rather than working.

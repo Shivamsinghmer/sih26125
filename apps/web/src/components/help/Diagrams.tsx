@@ -121,8 +121,8 @@ export function HowItFitsTogether() {
 
   const cards = [
     { head: "A person", lines: ["Ravi Sharma", "Stores Officer", "carries an ID card"] },
-    { head: "A clearance", lines: ["Manager", "valid to 12 March", "given by the authority"] },
-    { head: "An item", lines: ["Radar unit #1", "needs Manager clearance"] },
+    { head: "A clearance", lines: ["Secret", "valid to 12 March", "given by the authority"] },
+    { head: "An item", lines: ["Radar unit #1", "needs Secret clearance"] },
   ];
 
   return (

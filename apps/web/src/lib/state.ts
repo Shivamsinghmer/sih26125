@@ -46,7 +46,7 @@ export interface ConsoleState {
   assets: AssetState[];
 }
 
-const ALL_ROLES = [Role.Admin, Role.Manager, Role.Auditor, Role.User] as const;
+const ALL_ROLES = [Role.TopSecret, Role.Secret, Role.Confidential, Role.Restricted] as const;
 
 export async function loadPersona(
   persona: Persona,

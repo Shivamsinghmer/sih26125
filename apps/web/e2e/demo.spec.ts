@@ -37,10 +37,10 @@ test("step 1 — seeding registers identities and issues credentials", async ({ 
 
   // Target the whole card by test id. A bare div selector matched whichever
   // nested div happened to be first, which silently changed meaning the last
-  // time this markup moved — and "Manager" would have matched Priya's job
+  // time this markup moved — and the clearance name would have matched a job
   // title rather than her credential badge.
   const priya = page.getByTestId("person-card").filter({ hasText: "Priya Menon" });
-  await expect(priya.getByText("Manager", { exact: true })).toBeVisible();
+  await expect(priya.getByText("Secret", { exact: true })).toBeVisible();
 });
 
 test("step 2 — the asset appears under custody", async ({ page }) => {
@@ -72,7 +72,7 @@ test("step 3 — a transfer to an uncredentialled recipient is blocked and expla
 
   // This is the twenty seconds the pitch turns on.
   await expect(page.getByRole("heading", { name: "Handover blocked" })).toBeVisible();
-  await expect(page.getByText(/never been given a Manager clearance/i)).toBeVisible();
+  await expect(page.getByText(/never been given a Secret clearance/i)).toBeVisible();
 
   // The revert must be decoded, not shown as raw hex.
   await expect(page.getByText("TransferBlockedRoleNeverGranted")).toBeVisible();
@@ -111,7 +111,7 @@ test("step 5 — the auditor replay reconstructs the history from events", async
   // what it protects. Filtering asks the whole trail, which is the real claim.
   for (const phrase of [
     "Digital ID created for Priya Menon",
-    "Manager clearance given to Priya Menon",
+    "Secret clearance given to Priya Menon",
     "Item #1 added and given to Priya Menon",
   ]) {
     await page.getByLabel("Search").fill(phrase);
