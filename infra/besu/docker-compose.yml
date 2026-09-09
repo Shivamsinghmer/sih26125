@@ -17,6 +17,19 @@
 x-besu-common: &besu-common
   image: hyperledger/besu:24.12.2
   restart: unless-stopped
+  environment:
+    # A container-aware JVM with no limit takes about a quarter of *host* RAM as
+    # its max heap. Four of those on an 8GB box is the whole box, and when it is
+    # reached with no swap the kernel does not slow down, it kills — and the OOM
+    # killer picks the largest process, which on a shared host is somebody
+    # else's application rather than Besu.
+    #
+    # This chain holds a handful of contracts and a few thousand blocks. 512MB is
+    # generous for that; drop to 384 if the host is tight.
+    BESU_OPTS: -Xmx512m -Xms128m
+  # Belt and braces: the heap cap governs Java, this governs the container, so a
+  # leak outside the heap still cannot take the host down.
+  mem_limit: 900m
   command:
     - --genesis-file=/config/genesis.json
     - --node-private-key-file=/config/key
@@ -47,9 +60,12 @@ services:
       besu:
         ipv4_address: 172.28.0.11
     ports:
-      # Only the first node is reachable from the host; this is the RPC the
-      # deploy scripts and the console talk to.
-      - "8545:8545"
+      # Loopback only. This is an unauthenticated Ethereum RPC with ADMIN and
+      # TXPOOL enabled — on a public host, publishing it on 0.0.0.0 puts it in
+      # front of the internet, where it will be found and scanned. The deploy
+      # scripts run on the host and reach it here; the console reaches it over
+      # the compose network and never needs the published port at all.
+      - "127.0.0.1:8545:8545"
     volumes:
       - ./genesis.json:/config/genesis.json:ro
       - ./nodes/besu-node-1/key:/config/key:ro

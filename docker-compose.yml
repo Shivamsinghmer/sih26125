@@ -78,6 +78,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sih26125}
       RPC_URL: ${RPC_URL:-http://besu-node-1:8545}
       DEPLOYMENT_FILE: /deployments/${DEPLOYMENT_NETWORK:-besu}.json
+      # Off unless deliberately set. See .env.example.
+      DEMO_MODE: ${DEMO_MODE:-false}
     volumes:
       - ./deployments:/deployments:ro
     ports:

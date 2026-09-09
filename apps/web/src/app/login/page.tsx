@@ -28,12 +28,19 @@ export default async function LoginPage() {
   const session = await getSession();
   if (session) redirect(ROLE_HOME[session.role]);
 
-  // The demo identities are derived from Hardhat's published mnemonic, so
-  // surfacing the issuing authority's key here reveals nothing that is not
-  // already public. It exists so the key-based path can be demonstrated without
-  // a smartcard. A real deployment never prints a key on a web page.
+  // The demo identities are derived from a published mnemonic, so surfacing the
+  // issuing authority's key here reveals nothing that is not already public. It
+  // exists so the key-based path can be demonstrated without a smartcard. A real
+  // deployment never prints a key on a web page.
+  //
+  // NODE_ENV alone was the wrong gate. A hosted demo *is* a production build, so
+  // this hid the only way in and left an evaluator on the login page with no
+  // credential — the deployment succeeds and the demo is unusable. DEMO_MODE is
+  // therefore a separate, deliberate opt-in: a real deployment simply never sets
+  // it, and cannot enable it by accident the way NODE_ENV can be got wrong.
+  const demoMode = process.env.DEMO_MODE === "true";
   const demoAdminKey =
-    process.env.NODE_ENV === "production"
+    process.env.NODE_ENV === "production" && !demoMode
       ? null
       : (() => {
           const hd = accountFor({ addressIndex: 0 }).getHdKey().privateKey;
