@@ -71,14 +71,29 @@ quorum is a real answer.
 Cookies are already `httpOnly`, `sameSite=lax` and `secure` in production. HTTPS
 is required regardless, because the gate scanner's camera needs a secure origin.
 
+## Clearances and authority are separate
+
+Clearance levels are Restricted, Confidential, Secret and Top Secret — the
+ladder the Security Manual for Licensed Defence Industries (DDP, June 2025)
+para 5.1.3 applies to documents and equipment alike. Authority to issue, revoke
+or inspect is held separately as AccessControl roles on `RoleRegistry`
+(`ISSUER_ROLE`, `REVOKER_ROLE`, `AUDITOR_ROLE`), and the console derives what a
+person may open from those, never from how highly they are cleared.
+
+Provisioning a real deployment therefore has two steps per person, not one:
+grant the clearance they are vetted for, and grant the authority their post
+carries. They are different facts and they are revoked independently.
+
 ## Known scaffolding, recorded honestly
 
 These are deliberate shortcuts, each already marked in the code:
 
-- **Asset metadata is a placeholder.** Every mint writes the same constant hash,
-  `0x${"a3".repeat(32)}`. Real assets need their serial number and specification
-  documents hashed and that hash anchored — the contract is right, the caller is
-  a stub. *This is the most substantive gap in the list.*
+- ~~**Asset metadata is a placeholder.**~~ *Closed.* A mint now hashes the item's
+  name and serial number canonically and anchors that digest in `metadataHash`,
+  and a description is only shown when it still matches the token — so an edit
+  behind the system's back stops being displayed rather than being displayed as
+  though it were true. Specification documents are not hashed in yet; the field
+  and the join are there for them.
 - **Photos are base64 in a `text` column** (`people.ts`). Fine for a few dozen
   ID cards, wrong at scale; production puts them in object storage and keeps a
   reference.
