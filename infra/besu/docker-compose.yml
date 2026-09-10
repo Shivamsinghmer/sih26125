@@ -51,6 +51,12 @@ x-besu-common: &besu-common
     - --rpc-http-api=ETH,NET,WEB3,QBFT,ADMIN,TXPOOL
     - --rpc-http-cors-origins=all
     - --host-allowlist=*
+    # The console's own dashboard queries the full AssetToken log range on every
+    # load (fromBlock 0 to latest) — a design already noted as a scaling concern
+    # once this chain has run for weeks. Besu's newer default cap is tight enough
+    # to reject that query well before this chain's own block count would
+    # naturally warrant one. Raised generously rather than left to the default.
+    - --rpc-max-logs-range=200000
 
 services:
   besu-node-1:
