@@ -10,6 +10,7 @@ import {
   type Deployment,
   type Persona,
 } from "./chain";
+import { connection } from "./people";
 
 export type RoleValidity = "valid" | "never-granted" | "revoked" | "expired";
 
@@ -89,53 +90,50 @@ export async function loadPersona(
   };
 }
 
-async function loadAssets(deployment: Deployment): Promise<AssetState[]> {
-  const logs = await publicClient.getContractEvents({
-    address: deployment.contracts.AssetToken,
-    abi: assetTokenAbi,
-    eventName: "AssetMinted",
-    fromBlock: 0n,
-    toBlock: "latest",
+/**
+ * Read from the indexer's cache, not the chain.
+ *
+ * This used to be a live `getContractEvents` scan from block zero on every
+ * dashboard load — correct the day it was written, and then a live-fire hazard
+ * once this chain sat running for weeks: QBFT here commits an empty block every
+ * couple of seconds whether or not anyone uses the system, so "block zero to
+ * latest" is a range that grows by tens of thousands of blocks a day even at
+ * total rest. It first surfaced as Besu's own RPC range cap rejecting the
+ * query outright; raising that cap only bought days, because the query itself
+ * gets heavier — more blocks to read off disk — every day this stays live.
+ *
+ * The indexer already projects `AssetMinted`/`Transfer` into exactly this
+ * shape in Postgres, and does it by walking forward from its last processed
+ * block rather than by rescanning history. Reading its projection costs one
+ * indexed query regardless of how long the chain has been running.
+ */
+async function loadAssets(): Promise<AssetState[]> {
+  const sql = connection();
+  const rows = await sql<
+    {
+      token_id: string;
+      owner: string;
+      required_role: number;
+      metadata_hash: string;
+      minted_at: Date;
+    }[]
+  >`
+    select token_id, owner, required_role, metadata_hash, minted_at
+    from assets
+    order by token_id::bigint
+  `;
+
+  return rows.map((row) => {
+    const requiredRole = row.required_role as Role;
+    return {
+      tokenId: BigInt(row.token_id),
+      owner: row.owner as Address,
+      requiredRole,
+      requiredRoleLabel: roleName(requiredRole),
+      mintedAt: Math.floor(row.minted_at.getTime() / 1000),
+      metadataHash: row.metadata_hash,
+    };
   });
-
-  const assets = await Promise.all(
-    logs.map(async (log) => {
-      // ABIs are loaded from JSON artifacts rather than `as const`, so viem
-      // cannot infer event argument types here.
-      const args =
-        (log as unknown as {
-          args?: { tokenId?: bigint; requiredRole?: number; metadataHash?: string };
-        }).args ?? {};
-      const tokenId = args.tokenId ?? 0n;
-
-      const owner = (await publicClient.readContract({
-        address: deployment.contracts.AssetToken,
-        abi: assetTokenAbi,
-        functionName: "ownerOf",
-        args: [tokenId],
-      })) as Address;
-
-      const info = (await publicClient.readContract({
-        address: deployment.contracts.AssetToken,
-        abi: assetTokenAbi,
-        functionName: "assets",
-        args: [tokenId],
-      })) as [number, string, bigint];
-
-      const requiredRole = Number(info[0]) as Role;
-
-      return {
-        tokenId,
-        owner,
-        requiredRole,
-        requiredRoleLabel: roleName(requiredRole),
-        mintedAt: Number(info[2]),
-        metadataHash: info[1],
-      };
-    }),
-  );
-
-  return assets.sort((a, b) => Number(a.tokenId - b.tokenId));
 }
 
 /** Read everything the console renders. Returns null when nothing is deployed yet. */
@@ -147,7 +145,7 @@ export async function loadConsoleState(): Promise<ConsoleState | null> {
     const people = await loadPeople();
     const [personas, assets] = await Promise.all([
       Promise.all(people.map((p) => loadPersona(p, deployment))),
-      loadAssets(deployment),
+      loadAssets(),
     ]);
     return { deployment, personas, assets };
   } catch {
@@ -209,7 +207,7 @@ export async function lookupIdentity(address: Address): Promise<GateResult | nul
       args: [address],
     }) as Promise<{ did: string; status: number; registeredAt: bigint }>,
     publicClient.getBlockNumber(),
-    loadAssets(deployment),
+    loadAssets(),
   ]);
 
   const holdings = await Promise.all(
