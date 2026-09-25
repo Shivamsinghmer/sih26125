@@ -184,7 +184,9 @@ export async function loadAuditTrail(): Promise<AuditEntry[] | null> {
     }
 
     return entries;
-  } catch {
+  } catch (error) {
+    // The page says only "cannot be reached"; the cause belongs in the log.
+    console.error("[audit] could not replay the history from the shared record:", error);
     return null;
   }
 }

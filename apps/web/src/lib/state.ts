@@ -115,10 +115,12 @@ async function loadAssets(): Promise<AssetState[]> {
       owner: string;
       required_role: number;
       metadata_hash: string;
-      minted_at: Date;
+      /** Unix seconds, as text — Postgres bigints arrive as strings. */
+      minted_unix: string;
     }[]
   >`
-    select token_id, owner, required_role, metadata_hash, minted_at
+    select token_id, owner, required_role, metadata_hash,
+           extract(epoch from minted_at)::bigint as minted_unix
     from assets
     order by token_id::bigint
   `;
@@ -130,7 +132,13 @@ async function loadAssets(): Promise<AssetState[]> {
       owner: row.owner as Address,
       requiredRole,
       requiredRoleLabel: roleName(requiredRole),
-      mintedAt: Math.floor(row.minted_at.getTime() / 1000),
+      // Converted by Postgres, not here. This connection is shared with
+      // Drizzle, and Drizzle's postgres-js driver swaps the client's timestamp
+      // parser for one that returns raw strings — so `minted_at` arrived as
+      // text and `.getTime()` threw the moment the first asset existed, which
+      // took the whole dashboard down with it. Epoch seconds are a plain
+      // number whichever parser is installed.
+      mintedAt: Number(row.minted_unix),
       metadataHash: row.metadata_hash,
     };
   });
@@ -148,8 +156,12 @@ export async function loadConsoleState(): Promise<ConsoleState | null> {
       loadAssets(),
     ]);
     return { deployment, personas, assets };
-  } catch {
-    // Addresses on file but no chain answering, or a stale deployment file.
+  } catch (error) {
+    // Addresses on file but no chain answering, or a stale deployment file —
+    // or the indexer's tables missing, or Postgres down. The page shows one
+    // calm sentence for all of them, so the actual cause has to go to the
+    // server log; swallowing it silently made every one of these look alike.
+    console.error("[console] could not load state from the shared record:", error);
     return null;
   }
 }
