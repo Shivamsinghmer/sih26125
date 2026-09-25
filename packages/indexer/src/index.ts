@@ -37,6 +37,8 @@ const RPC_URL = process.env.RPC_URL ?? "http://127.0.0.1:8545";
 const DATABASE_URL =
   process.env.DATABASE_URL ?? "postgres://postgres:postgres@127.0.0.1:5432/sih26125";
 const POLL_MS = Number(process.env.POLL_MS ?? 4000);
+/** Blocks per log query. Must stay under Besu's --rpc-max-logs-range (200,000 here). */
+const LOG_WINDOW = BigInt(process.env.LOG_WINDOW ?? 50_000);
 
 const sql = postgres(DATABASE_URL);
 const db = drizzle(sql);
@@ -166,26 +168,33 @@ async function main() {
     try {
       const head = await publicClient.getBlockNumber();
 
-      if (head >= cursor) {
-        const events = await collect(cursor, head);
+      // Walk the gap in windows rather than one query. QBFT commits an empty
+      // block every couple of seconds, so after a restart the gap is the whole
+      // chain — hundreds of thousands of blocks — and Besu rejects any log
+      // query wider than --rpc-max-logs-range. As a single query, the replay
+      // failed, reset to zero and failed again forever. Progress is saved
+      // after every window, so an interruption loses at most one of them.
+      while (cursor <= head) {
+        const to = cursor + LOG_WINDOW - 1n < head ? cursor + LOG_WINDOW - 1n : head;
+        const events = await collect(cursor, to);
         for (const event of events) apply(projection, event);
         await persist(events, projection);
 
         await db
           .insert(indexerState)
-          .values({ id: 1, lastBlock: Number(head), updatedAt: new Date() })
+          .values({ id: 1, lastBlock: Number(to), updatedAt: new Date() })
           .onConflictDoUpdate({
             target: indexerState.id,
-            set: { lastBlock: Number(head), updatedAt: new Date() },
+            set: { lastBlock: Number(to), updatedAt: new Date() },
           });
 
         if (events.length > 0) {
           console.log(
-            `indexed ${events.length} event(s) up to block ${head} — ` +
+            `indexed ${events.length} event(s) up to block ${to} — ` +
               `${projection.assets.size} asset(s), ${projection.roleGrants.size} grant(s)`,
           );
         }
-        cursor = head + 1n;
+        cursor = to + 1n;
       }
     } catch (error) {
       // A chain restart resets block numbers, so fall back to a full replay
