@@ -92,7 +92,7 @@ export default async function LandingPage() {
       <div className="mkt landing">
       <header className="landing__bar">
         <p className="landing__mark">
-          <span>BEL Asset Custody</span>
+          <span>CredLock</span>
           <span className="landing__mark-sub">SIH26125</span>
         </p>
         <Link href={session ? ROLE_HOME[session.role] : "/login"} className="landing__cta">

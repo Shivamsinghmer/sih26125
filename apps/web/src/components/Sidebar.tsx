@@ -127,7 +127,7 @@ export function Sidebar({
     >
       <div className="rail__top">
         <Link href="/" className="rail__mark">
-          <span className="text-caption leading-caption text-ink-black">BEL Asset Custody</span>
+          <span className="text-caption leading-caption text-ink-black">CredLock</span>
           <span className="text-caption leading-caption text-label">SIH26125</span>
         </Link>
 

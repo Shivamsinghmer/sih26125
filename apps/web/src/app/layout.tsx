@@ -16,7 +16,7 @@ const bodySans = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BEL Asset Custody — SIH26125",
+  title: "CredLock — SIH26125",
   description:
     "Credential-gated identity, access control and digital asset custody on a private permissioned chain.",
 };

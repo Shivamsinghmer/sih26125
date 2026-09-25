@@ -12,7 +12,7 @@ replay are operated, not read.
 
 ## What this is
 
-A credential-gated asset custody platform for Bharat Electronics Limited, built
+**CredLock** — a credential-gated asset custody platform for Bharat Electronics Limited, built
 for Smart India Hackathon 2026 (problem statement SIH26125). It joins three
 things a large organisation normally keeps apart: who a person is, what they may
 do, and what they hold custody of.

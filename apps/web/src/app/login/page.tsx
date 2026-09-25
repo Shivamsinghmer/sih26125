@@ -57,7 +57,7 @@ export default async function LoginPage() {
       <main className="signin__inner">
         <header className="signin__head">
           <Link href="/" className="signin__back">
-            ← BEL Asset Custody
+            ← CredLock
           </Link>
 
           <h1 className="display-serif signin__title">Sign in</h1>
