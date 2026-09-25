@@ -41,12 +41,12 @@ COPY . .
 # never in the build context.
 RUN pnpm --filter @sih26125/contracts build
 
-# db:push creates the tables and is safe to re-run, so it belongs with the start
-# rather than as a step someone has to remember. Restarting repairs the index —
-# the indexer backfills from block zero — which is the whole reason this is not
-# a migration story.
+# The indexer creates its own tables on start (ensureSchema in src/index.ts),
+# with IF NOT EXISTS DDL that is a no-op once they exist. This used to run
+# `drizzle-kit push --force` first, which cannot be made non-interactive: it
+# misreads the chain_events unique constraint as missing and, once the table
+# holds rows, stops to ask whether to truncate it. A container has no terminal
+# to answer on, so every restart after the first hung there for good.
 #
-# --force auto-approves, because a container has no terminal to answer a prompt
-# on. It is only safe because drizzle.config.ts scopes the push to the indexer's
-# own tables; read the comment there before removing either half.
-CMD ["sh", "-c", "pnpm --filter @sih26125/indexer exec drizzle-kit push --force && pnpm --filter @sih26125/indexer start"]
+# Restarting still repairs the index: the indexer backfills from block zero.
+CMD ["pnpm", "--filter", "@sih26125/indexer", "start"]

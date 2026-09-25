@@ -40,7 +40,9 @@ const POLL_MS = Number(process.env.POLL_MS ?? 4000);
 /** Blocks per log query. Must stay under Besu's --rpc-max-logs-range (200,000 here). */
 const LOG_WINDOW = BigInt(process.env.LOG_WINDOW ?? 50_000);
 
-const sql = postgres(DATABASE_URL);
+// onnotice silenced: every start runs IF NOT EXISTS DDL, and Postgres answers
+// each already-present table with a "skipping" notice that is not news.
+const sql = postgres(DATABASE_URL, { onnotice: () => {} });
 const db = drizzle(sql);
 
 /**
@@ -157,7 +159,68 @@ async function persist(events: IndexedEvent[], projection: Projection) {
   }
 }
 
+/**
+ * Create the tables if they are missing — idempotently, every start.
+ *
+ * This used to be `drizzle-kit push --force` in the container's command. That
+ * tool is interactive, and it misreads the `chain_events_log_key` constraint as
+ * absent even when it exists; with rows in the table it then stops to ask
+ * whether to truncate. A container has no one to answer, so every restart
+ * after the first hung on that question and the indexer never ran.
+ *
+ * Plain `IF NOT EXISTS` DDL cannot prompt and is a no-op on a database that is
+ * already set up. It mirrors schema.ts exactly; `db:push` remains for local
+ * development, where someone is at the keyboard.
+ */
+async function ensureSchema() {
+  await sql.unsafe(`
+    create table if not exists chain_events (
+      id serial primary key,
+      block_number bigint not null,
+      log_index integer not null,
+      transaction_hash text not null,
+      contract text not null,
+      event_name text not null,
+      payload jsonb not null,
+      occurred_at timestamptz not null,
+      constraint chain_events_log_key unique (transaction_hash, log_index)
+    );
+    create index if not exists chain_events_block_idx on chain_events (block_number, log_index);
+
+    create table if not exists assets (
+      token_id text primary key,
+      owner text not null,
+      required_role integer not null,
+      metadata_hash text not null,
+      minted_at timestamptz not null,
+      updated_at_block bigint not null
+    );
+
+    create table if not exists role_grants (
+      account text not null,
+      role integer not null,
+      expiry bigint not null,
+      revoked boolean not null default false,
+      updated_at_block bigint not null,
+      constraint role_grants_key unique (account, role)
+    );
+
+    create table if not exists identities (
+      account text primary key,
+      did text not null,
+      registered_at_block bigint not null
+    );
+
+    create table if not exists indexer_state (
+      id integer primary key,
+      last_block bigint not null,
+      updated_at timestamptz not null
+    );
+  `);
+}
+
 async function main() {
+  await ensureSchema();
   console.log(`indexer → ${RPC_URL}`);
   console.log(`         ${DATABASE_URL.replace(/:\/\/[^@]+@/, "://***@")}`);
 
