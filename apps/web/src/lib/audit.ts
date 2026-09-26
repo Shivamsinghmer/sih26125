@@ -114,17 +114,40 @@ function describe(
   }
 }
 
+/**
+ * Blocks per log query.
+ *
+ * Besu rejects any getLogs wider than --rpc-max-logs-range (200,000 on the
+ * deployed network), and QBFT commits an empty block every couple of seconds,
+ * so a single "block zero to latest" query stopped working once the chain
+ * passed 200,000 blocks — about four and a half days after it started. The
+ * replay still reads the chain directly, as it must (an auditor's answer may
+ * not depend on the index), but in windows kept safely under the cap and run
+ * in parallel. Besu's log-bloom cache keeps each window cheap.
+ */
+const LOG_WINDOW = BigInt(process.env.AUDIT_LOG_WINDOW ?? 100_000);
+
+function windows(head: bigint): { fromBlock: bigint; toBlock: bigint }[] {
+  const out: { fromBlock: bigint; toBlock: bigint }[] = [];
+  for (let from = 0n; from <= head; from += LOG_WINDOW) {
+    const to = from + LOG_WINDOW - 1n;
+    out.push({ fromBlock: from, toBlock: to < head ? to : head });
+  }
+  return out;
+}
+
 async function collect(
   people: Persona[],
   address: Address,
   abi: readonly unknown[],
   contract: AuditContract,
+  head: bigint,
 ): Promise<AuditEntry[]> {
-  const rawLogs = await publicClient.getLogs({
-    address,
-    fromBlock: 0n,
-    toBlock: "latest",
-  });
+  const rawLogs = (
+    await Promise.all(
+      windows(head).map((range) => publicClient.getLogs({ address, ...range })),
+    )
+  ).flat();
 
   const parsed = parseEventLogs({
     abi: abi as never,
@@ -158,10 +181,12 @@ export async function loadAuditTrail(): Promise<AuditEntry[] | null> {
 
   try {
     const people = await loadPeople();
+    // One head for every contract, so the three replays cover the same range.
+    const head = await publicClient.getBlockNumber();
     const groups = await Promise.all([
-      collect(people, deployment.contracts.IdentityRegistry, identityRegistryAbi, "IdentityRegistry"),
-      collect(people, deployment.contracts.RoleRegistry, roleRegistryAbi, "RoleRegistry"),
-      collect(people, deployment.contracts.AssetToken, assetTokenAbi, "AssetToken"),
+      collect(people, deployment.contracts.IdentityRegistry, identityRegistryAbi, "IdentityRegistry", head),
+      collect(people, deployment.contracts.RoleRegistry, roleRegistryAbi, "RoleRegistry", head),
+      collect(people, deployment.contracts.AssetToken, assetTokenAbi, "AssetToken", head),
     ]);
 
     const entries = groups.flat().sort((a, b) => {
