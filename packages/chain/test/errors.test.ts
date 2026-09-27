@@ -36,7 +36,7 @@ describe("decoding blocked transfers", () => {
     expect(explained.reason).toBe("role-expired");
     expect(explained.title).toBe("Handover blocked");
     expect(explained.detail).toBe(
-      "Their Manager clearance ran out on 12 Aug 2026.",
+      "Their Secret clearance ran out on 12 Aug 2026.",
     );
     expect(explained.requiredRole).toBe(Role.Secret);
     expect(explained.expiredAt?.getTime()).toBe(EXPIRY_TS * 1000);
@@ -48,7 +48,7 @@ describe("decoding blocked transfers", () => {
 
     expect(explained.reason).toBe("role-revoked");
     expect(explained.detail).toBe(
-      "Their Manager clearance was taken away.",
+      "Their Secret clearance was taken away.",
     );
   });
 
@@ -58,7 +58,7 @@ describe("decoding blocked transfers", () => {
 
     expect(explained.reason).toBe("role-never-granted");
     expect(explained.detail).toBe(
-      "They have never been given a Manager clearance.",
+      "They have never been given a Secret clearance.",
     );
   });
 

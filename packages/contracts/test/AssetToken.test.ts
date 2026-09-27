@@ -29,7 +29,7 @@ async function deployFixture() {
 
   const oneYearOut = (await time.latest()) + 365 * 24 * 60 * 60;
 
-  // manager and otherManager hold Manager; plainUser holds only User; stranger holds nothing.
+  // manager and otherManager are cleared to Secret; plainUser only to Restricted; stranger holds nothing.
   await roleRegistry.grantBusinessRole(manager.address, Role.Secret, oneYearOut);
   await roleRegistry.grantBusinessRole(otherManager.address, Role.Secret, oneYearOut);
   await roleRegistry.grantBusinessRole(plainUser.address, Role.Restricted, oneYearOut);

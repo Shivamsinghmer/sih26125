@@ -76,7 +76,7 @@ async function makeBundle(
         {
           account: PRIYA,
           role: Role.Secret,
-          roleLabel: "Manager",
+          roleLabel: "Secret",
           valid: true,
           reason: "valid",
           expiry: EXPIRY,
@@ -227,7 +227,7 @@ describe("the holder's credential", () => {
 
     expect(report.verified).toBe(false);
     expect(report.checks.find((c) => c.name === "Holder is credentialled")?.detail).toMatch(
-      /No Manager credential in this bundle/i,
+      /No Secret credential in this bundle/i,
     );
   });
 
@@ -241,7 +241,7 @@ describe("the holder's credential", () => {
             {
               account: PRIYA,
               role: Role.Secret,
-              roleLabel: "Manager",
+              roleLabel: "Secret",
               valid: false,
               reason: "revoked",
               expiry: EXPIRY,
@@ -255,7 +255,7 @@ describe("the holder's credential", () => {
     const report = await verifyBundle(bundle, { now: NOW });
     expect(report.verified).toBe(false);
     expect(report.checks.find((c) => c.name === "Holder is credentialled")?.detail).toMatch(
-      /reported this holder's Manager credential as revoked/i,
+      /reported this holder's Secret credential as revoked/i,
     );
   });
 

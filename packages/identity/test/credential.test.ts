@@ -45,7 +45,7 @@ describe("role credentials", () => {
     const verified = await verifyRoleCredential(jwt);
 
     expect(verified.role).toBe(Role.Secret);
-    expect(verified.roleName).toBe("Manager");
+    expect(verified.roleName).toBe("Secret");
     expect(verified.subjectAddress).toBe(SUBJECT.address.toLowerCase());
     expect(verified.issuerDid).toBe(didFromAddress(ISSUER.address, CHAIN_ID));
   });
@@ -99,7 +99,7 @@ describe("role credentials", () => {
     ).rejects.toThrow(/must be after issuance/);
   });
 
-  it("keeps roles distinct — a Manager credential does not read as Admin", async () => {
+  it("keeps clearances distinct — a Secret credential does not read as Top Secret", async () => {
     const jwt = await issueRoleCredential(baseInput({ role: Role.Secret }));
     const verified = await verifyRoleCredential(jwt);
     expect(verified.role).not.toBe(Role.TopSecret);
