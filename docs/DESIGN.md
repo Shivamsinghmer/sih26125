@@ -215,7 +215,7 @@ This style reference was extracted from [steep.app](https://steep.app) and is th
 | Stat Card with Chart | Auditor dashboard metrics — assets under custody, active credentials, revocations this month |
 | Neutral Card (`#f2f2f3`) | Default container for asset lists, identity records, role tables |
 | Accent Peach Card (`#fbe1d1`) | Reserved for **one** thing per page — see below |
-| Tag / Category Label | Role labels (Admin, Manager, Auditor, User) and asset categories |
+| Tag / Category Label | Clearance levels (Restricted, Confidential, Secret, Top Secret) and asset categories |
 | Pill Button pair | Every admin action row: filled primary (Mint asset, Issue credential) + ghost secondary (Cancel) |
 
 ## The one deliberate deviation: error state
@@ -226,7 +226,7 @@ Rather than importing a red, use the existing **Sienna Brown `#5d2a1a` on Blush 
 
 The blocked-transfer card should render:
 - Title, Sohne 20px weight 500, `#5d2a1a` — "Transfer blocked"
-- Reason, Sohne 17px weight 430, `#5d2a1a` — decoded from the contract's custom error, e.g. "Recipient does not hold a valid Manager credential (expired 12 Aug 2026)"
+- Reason, Sohne 17px weight 430, `#5d2a1a` — decoded from the contract's custom error, e.g. "Their Secret clearance ran out on 12 Aug 2026."
 - Transaction hash, Sohne 14px weight 400, `#5d2a1a` at reduced opacity
 
 Never render a raw revert string or a hex error selector to the user. See `PROJECT.md` § Decoding contract errors.
@@ -238,3 +238,44 @@ Signifier and Sohne are both commercial (Klim Type Foundry). Unless licenses are
 - **Sohne →** Inter (Google Fonts, free), which supports variable weights so the 430/450/480 half-steps still work
 
 The half-step weights are load-bearing in this system — pick a variable font so they survive.
+
+## Component layer — shadcn/ui on Steep
+
+`apps/web` uses shadcn/ui (Radix base) as its component primitives. They are
+**Steep components**, not a second design system: shadcn's semantic tokens
+(`--primary`, `--muted`, `--border`, `--radius`, …) are mapped onto the Steep
+palette in `globals.css`, so anything the CLI adds arrives already speaking
+Steep. Add new primitives with `pnpm dlx shadcn@latest add <name> -c apps/web`
+and then read the generated file: stock geometry (32px buttons, 10px radii,
+14px text) still has to be brought onto this system by hand.
+
+| Primitive | File | Steep role |
+|---|---|---|
+| `Button` | `components/ui/button.tsx` | The pill. `filled` (ink lozenge) and `ghost` (ink outline) are the matched pair; `quiet` for lowest emphasis; `refusal` is sienna on blush. 48px high at body size. |
+| `Card` | `components/ui/card.tsx` | `neutral` (mist, flat), `elevated` (white + floating-artifact shadow, the only elevated surface), `accent` (blush + sienna, once per page). 24px radius. |
+| `Badge` | `components/ui/badge.tsx` | `ink` for a clearance in force, `refusal` for taken away / ran out, `outline` / `neutral` for quiet state, `tag` for the typographic category label (not a chip). |
+| `Table` | `components/ui/table.tsx` | Tabular numerals throughout; hairline rules, never a filled header band. |
+| `Input` | `components/ui/input.tsx` | 48px, 16px radius, body-size text, ink focus ring. |
+| `Field`, `Select` | `components/ui/field.tsx` | `Field` is a wrapping `<label>` so association holds by nesting. `Select` is the **native** select, styled — deliberately not Radix's: it needs no JS, uses the platform picker on a touch gate terminal, and the e2e suite drives it with `selectOption`. |
+| `Alert`, `Skeleton`, `Separator`, `Label`, `Tooltip` | `components/ui/` | Themed to the same tokens. |
+
+Project compositions built on them: `PageHeading` (serif title, actions slot,
+closing hairline), `FormSection` (explanation left, form surface right),
+`ArrowLink` (the text link with arrow — no underline at rest),
+`RecordUnreachable`, and `ActionResultCard`.
+
+### Rules the component layer enforces
+
+- **One authored moment.** `.refusal-in` in `globals.css` is the only entrance
+  animation in the console: the blocked handover and the gate verdict unfold
+  from their top edge, and the refusal bar draws shut. Everything else loads
+  straight into the task. Reduced motion shows the final state.
+- **Browser surfaces are themed.** Selection is blush with sienna ink; caret,
+  focus ring and form `accent-color` are ink; scrollbars are hairline greys.
+- **The rail is the second neutral layer** (`--sidebar`, `#fafafb`) with an
+  active item raised in white — not an ink bar, because ink is reserved for the
+  page's primary action.
+- **Light only.** There is no `.dark` token block by design; the `dark` variant
+  stays class-gated so an OS dark preference cannot half-theme a surface whose
+  contrast was tuned on paper white.
+

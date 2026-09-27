@@ -55,7 +55,7 @@ quorum is a real answer.
 |---|---|---|
 | Four demo identities auto-seeded | `people.ts` → `DEFAULT_PEOPLE`, inserted in `ensureReady` | Guard on an explicit `SEED_DEMO_DATA` flag, off by default |
 | `gate-3 / gate-post-3` terminal | `auth.ts` → `DEFAULT_USERS` | Provision each terminal with a generated credential at install |
-| Issuing authority's key printed on the login page | `login/page.tsx` | Already guarded — returns `null` when `NODE_ENV === "production"` |
+| Issuing authority's key printed on the login page | `login/page.tsx` | Guarded on `DEMO_MODE`, which defaults to false and must be set deliberately. **Not** on `NODE_ENV` alone: a hosted demo *is* a production build, so that gate hid the only way in and left the deployment working but unusable. The block renders only when `DEMO_MODE === "true"`; a real deployment never sets it. |
 | "Seed the demo" button, `demo:reset`, `reset-people` | console + package scripts | Remove from the production build |
 | Hardhat's published mnemonic as the default | `people.ts` | No default; see key custody above |
 
@@ -67,6 +67,7 @@ quorum is a real answer.
 | `DATABASE_URL` | `postgres:postgres@127.0.0.1` | Real credentials, TLS, not the default superuser |
 | `RPC_URL` | `http://127.0.0.1:8545` | The Besu node, over the internal network |
 | `DEMO_MNEMONIC` | Hardhat's published seed | Does not exist |
+| `DEMO_MODE` | `true` on a hosted demo, so an evaluator can sign in | `false`, and left unset. It is the only thing standing between a deployment and the issuing authority's key on the login page. |
 
 Cookies are already `httpOnly`, `sameSite=lax` and `secure` in production. HTTPS
 is required regardless, because the gate scanner's camera needs a secure origin.
@@ -155,8 +156,28 @@ argument is that no single party can rewrite history should not be answering
 strangers. The console belongs beside the nodes; that is what the compose file
 is for.
 
-The validators are held by different departments — IT Security, Internal Audit,
-and two operating divisions — so rewriting history requires collusion across
-departments rather than one compromised administrator. That property is the
-answer to "why not just a database with an audit table", and it only exists
-once the four nodes are genuinely in different hands.
+### Whose hands the four nodes are in
+
+This used to say the validators belong to IT Security, Internal Audit and two
+operating divisions. That is a weaker claim than it sounds, and it loses to one
+question: *who owns the servers?* If the answer is BEL, then BEL can present two
+different histories to two readers exactly as freely as it could with a single
+database, and four nodes inside one organisation is distributed infrastructure
+rather than distributed trust.
+
+**The boundary that is real here is between organisations.** A licensed defence
+industry's custody record already spans the contractor, the licensing authority
+(DDP) whose security manual the clearances come from, the resident
+quality-assurance authority sitting inside contractor premises but reporting to
+the customer, and the unit taking custody at the far end. Those parties do not
+report to one another, which is the property the argument needs: the participant
+with the strongest motive to revise a custody record is not a participant who
+can.
+
+Confirm the counterpart bodies and their willingness to run a node before naming
+them to an evaluator — the shape of the claim carries the weight, not the names.
+
+And if the deployment BEL wants is genuinely single-authority, the honest
+recommendation is Postgres with signed append-only audit storage. The full
+argument, including what a signed log can and cannot do, is in
+[`WHY-BLOCKCHAIN.md`](./WHY-BLOCKCHAIN.md).

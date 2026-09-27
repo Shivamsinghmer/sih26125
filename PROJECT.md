@@ -45,7 +45,7 @@ The architecture diagram should have exactly these five boxes, and the demo shou
 | 1 | **Decentralised Identifiers (DIDs)** | Every user gets a self-sovereign, cryptographically verifiable identity that works without a central authority vouching for it |
 | 2 | **NFT-based asset ownership** | Each asset becomes a unique, non-duplicable token, permanently recorded and directly linked to a user DID |
 | 3 | **Smart-contract governance** | Only authorised administrators can mint and assign assets; all rules for creation, allocation, transfer and validation are enforced in code |
-| 4 | **Role-Based Access Control** | Four roles — **Admin, Manager, Auditor, User**. Use these exact names. Enforced automatically at every operation |
+| 4 | **Role-Based Access Control** | Enforced automatically at every operation, in the contract. BEL named four roles — Admin, Manager, Auditor, User. The build does **not** implement that list literally; it splits it into a clearance ladder and an authority set, because the four names conflate two independent facts. This is a deliberate departure and a judge may ask about it — the reasoning and the prepared answer are in §6, "Clearance is not a job". |
 | 5 | **Immutable audit trail** | Identity creation, minting, allocation, rights assignment, ownership transfers and permission updates are all permanently recorded |
 
 ### How teams misread this PS — avoid all four
@@ -109,10 +109,13 @@ The same three primitives — verifiable identity, tokenised custody, contract-e
 | Contract | Responsibility | Status |
 |---|---|---|
 | `IdentityRegistry.sol` | Maps DID → account address, holds status (Active / Suspended / Retired). No personal data. | ✅ Built |
-| `RoleRegistry.sol` | Role grants with expiry, revocation, separation-of-duties constraints. **Deliberately separate from the asset contract.** | ✅ Built |
+| `RoleRegistry.sol` | Clearance grants with expiry and revocation, plus the AccessControl roles that carry authority. Two separate facts — see §6. **Deliberately separate from the asset contract.** | ✅ Built |
 | `AssetToken.sol` | ERC-721 for assets. The `_update` hook calls RoleRegistry on every transfer. Batch reassignment for offboarding. | ✅ Built |
-| `CredentialStatus.sol` | Anchors the W3C Bitstring Status List so revocation is one bit and verification is cheap. | ⬜ Not yet built |
-| `GuardianRecovery.sol` | m-of-n guardian quorum to rotate a lost signing key, with a time-lock and mandatory notification event. | ⬜ Not yet built |
+| `CredentialStatus.sol` | Anchors the W3C Bitstring Status List so revocation is one bit and verification is cheap. | ✅ Built |
+| `GuardianRecovery.sol` | m-of-n guardian quorum to rotate a lost signing key, with a time-lock and mandatory notification event. | ✅ Built |
+
+All five are deployed together by `scripts/deploy.ts` and covered by the 48
+contract tests. Nothing in this table is aspirational.
 
 ### 🔴 The design rule that will save you on stage
 
@@ -215,13 +218,84 @@ The question "Ethereum or Solana" usually means "which public network". For this
 
 ### The prepared answer for a judge
 
-> "We use the EVM as a standard, but not a public Ethereum network. The deployment is a private Hyperledger Besu network with QBFT consensus and validators held by different departments — IT Security, Internal Audit and two operating divisions — so rewriting history requires collusion across departments rather than one administrator. Gas price is zero, membership is permissioned, and the whole thing runs inside an air-gapped facility. We considered Solana and rejected it: it has no practical permissioned deployment model, its programs are written in Rust which breaks our stack, and there is no mature DID standard for it. The properties Solana is excellent at — throughput and low public fees — are not properties this workload needs."
+> "We use the EVM as a standard, but not a public Ethereum network. The deployment is a private Hyperledger Besu network with QBFT consensus, and the validators are held by parties that do not report to one another — the contractor, the licensing authority whose security manual the clearances come from, the resident inspection authority, and the unit taking custody at the far end — so rewriting history requires collusion across an organisational boundary, not just across one company's departments. Gas price is zero, membership is permissioned, and the whole thing runs inside an air-gapped facility. We considered Solana and rejected it: it has no practical permissioned deployment model, its programs are written in Rust which breaks our stack, and there is no mature DID standard for it. The properties Solana is excellent at — throughput and low public fees — are not properties this workload needs."
+
+⚠️ **Say "different organisations", never "different BEL departments".** The
+departmental version of this answer loses to one question — *who owns the
+servers?* — and [`docs/WHY-BLOCKCHAIN.md`](docs/WHY-BLOCKCHAIN.md) § 4 explains
+why in full. Four nodes inside one organisation is distributed infrastructure,
+not distributed trust. Confirm the counterpart bodies before naming them on
+stage; the shape of the claim is what carries the weight.
 
 ---
 
 ## 6. Settled decisions — do not relitigate
 
 These were debated and closed. Each records *why*, so edge cases can be judged rather than re-argued.
+
+### Clearance is not a job — the four PS roles became two separate things
+
+This is the one settled decision that visibly departs from the problem statement's
+own wording, so it is recorded first and in full. **Expect to be asked about it.**
+
+BEL's deliverable 4 names four roles: Admin, Manager, Auditor, User. The build
+shipped exactly that enum at first — `RoleRegistry.Role` was
+`None, User, Auditor, Manager, Admin` — and it was wrong, for a reason that only
+became obvious once the gate check and the console's own login were built on it:
+
+> **Those four names are two different facts wearing one label.** "Manager" says
+> something about what a person may be trusted to *hold*. "Auditor" says
+> something about what a person may *do*. Putting them on one ladder means the
+> top of the ladder silently carries every authority below it — and it did: the
+> console derived administrative power from holding the highest business role, so
+> being cleared to the top level made you an administrator of the system.
+
+The two facts are genuinely independent in this domain. An officer authorised to
+sign gate passes is a named delegation from the CEO under the Security Manual for
+Licensed Defence Industries (DDP, revised June 2025) para 4.5 — not a consequence
+of being cleared to Secret. A resident inspector needs to see everything and
+change nothing, at whatever clearance they happen to hold.
+
+**What the code does now.** Two registers, in one contract, deliberately not one
+ladder:
+
+| Fact | Where it lives | Values |
+|---|---|---|
+| What a person may **hold** — clearance | `RoleRegistry.Role` enum | `None, Restricted, Confidential, Secret, TopSecret` (ordinals 0–4) |
+| What a person may **do** — authority | OpenZeppelin `AccessControl` roles on `RoleRegistry` | `ISSUER_ROLE`, `REVOKER_ROLE`, `AUDITOR_ROLE`, `DEFAULT_ADMIN_ROLE` |
+
+The clearance ladder is not invented: Restricted / Confidential / Secret / Top
+Secret are the levels para 5.1.3 of that same manual applies to "documents and
+equipment" alike, which is precisely why one ladder can grade both a person and
+the item they want to carry out of the building. `AssetToken._update` compares the
+two. **The ordinals did not change**, so credentials issued against the old names
+still decode to the same number — see the comment on `Role` in
+`packages/identity/src/roles.ts`, which is the drift this pins down.
+
+Provisioning a person is therefore two grants, not one: the clearance they are
+vetted for, and the authority their post carries. They are revoked independently.
+`consoleRoleForAddress` reads **authority only** — `ISSUER_ROLE` opens the
+console, `AUDITOR_ROLE` opens the replay, and clearance opens neither.
+
+**The prepared answer.** Do not be defensive about this; the honest version is
+stronger than the literal one:
+
+> "The problem statement names Admin, Manager, Auditor and User, and we
+> implemented all four capabilities — but not as one list, because two of those
+> names are clearances and two are authorities, and collapsing them is the bug we
+> found. In our first build the highest business role silently carried
+> administrative power over the console, which is the insider-privilege problem
+> the statement asks us to solve, reintroduced by our own enum. So clearance is
+> Restricted through Top Secret — the ladder the DDP security manual already
+> applies to equipment — and authority to issue, revoke or inspect is held
+> separately, granted separately and revoked separately. An asset transfer checks
+> clearance. Opening the console checks authority. Nobody gets one by having the
+> other."
+
+⚠️ **Do not quietly rename it back** to satisfy a literal reading of the
+deliverable. Reverting re-creates the privilege escalation described above, and
+`docs/PRODUCTION.md` § "Clearances and authority are separate" is written against
+the current shape.
 
 ### Veramo — timeboxed, with a concrete fallback
 
@@ -307,7 +381,7 @@ error TransferBlockedRoleExpired(address recipient, RoleRegistry.Role requiredRo
 
 **What the UI must do:** catch the revert, decode the custom error with viem, and render something like:
 
-> **Transfer blocked** — recipient does not hold a valid Manager credential (expired 12 Aug 2026).
+> **Transfer blocked** — recipient does not hold a valid Secret clearance (expired 12 Aug 2026).
 
 Never show a raw revert string or a hex selector. The expiry timestamp is carried in the error precisely so the message can name the date. Style per `docs/DESIGN.md` § "The one deliberate deviation: error state".
 
@@ -332,15 +406,15 @@ once the code looks finished.
 | **Phase 2** | Identity service | ✅ **Done.** `issueRoleCredential` / `verifyRoleCredential` issue and verify a role credential with no network access — proven by resolving a `did:ethr` identifier from the string alone. Revocation is observable via `RoleRegistry.checkRole`'s `InvalidReason`. |
 | **Phase 3** | Indexer | ✅ **Done, verified against real Postgres.** All five tables created via `drizzle-kit push`; a seeded chain indexed correctly; the index was `TRUNCATE`d to zero rows and rebuilt — **byte-for-byte identical** to the pre-truncate snapshot. Live following (not just backfill) confirmed by revoking a credential and watching the running daemon pick it up. |
 | **Phase 4** | Interfaces | ✅ **Done.** Admin console (issue / revoke / mint / onboard), the blocked-transfer decode, and the auditor replay all functional end to end in a browser. Onboarding a new person writes personal data to Postgres and only a DID to the chain — verified by adding "A. Krishnan" and confirming the `people` table holds no private key. |
-| **Phase 5** | Hardening | ✅ **Done.** Guardian recovery's cancel-during-timelock path is tested (a colluding quorum cannot recover an account whose owner is still watching). The verifier binary (`bun build --compile`, 95MB) was run standalone with the chain process killed first — `curl` returned connection-refused, the binary still returned `VERIFIED`. A forged bundle was caught by two independent checks. Besu: four QBFT validators (one per named department) produce blocks on the 2s period, and the identical bytecode used on Hardhat deploys and reverts identically — `pnpm --filter @sih26125/chain besu:verify`. |
-| **Phase 6** | Demo | ✅ **Scripted spine done and timed; live rehearsal is a team task, not a code one.** `pnpm --filter @sih26125/chain demo` runs all five steps end to end in **under 3 seconds**. The 6-test Playwright suite (`pnpm e2e`) asserts each beat against the real console and is self-resetting, so it can be re-run before the final without inheriting stale chain state. What remains is a human rehearsing the narration over the UI to fit the five-minute slot — that part cannot be verified by a script. |
+| **Phase 5** | Hardening | ✅ **Done.** Guardian recovery's cancel-during-timelock path is tested (a colluding quorum cannot recover an account whose owner is still watching). The verifier binary (`bun build --compile`, 95MB) was run standalone with the chain process killed first — `curl` returned connection-refused, the binary still returned `VERIFIED`. A forged bundle was caught by two independent checks. Besu: four QBFT validators (one per participating organisation — see §5) produce blocks on the 2s period, and the identical bytecode used on Hardhat deploys and reverts identically — `pnpm --filter @sih26125/chain besu:verify`. |
+| **Phase 6** | Demo | ✅ **Scripted spine done and timed; live rehearsal is a team task, not a code one.** `pnpm --filter @sih26125/chain demo` runs all five steps end to end in **under 3 seconds**. The 15-test Playwright suite (`pnpm e2e`) asserts each beat against the real console — 7 tests walking the demo itself, 8 covering who may reach what — and is self-resetting, so it can be re-run before the final without inheriting stale chain state. What remains is a human rehearsing the narration over the UI to fit the five-minute slot — that part cannot be verified by a script. |
 
 ### The five-step demo script
 
-1. Admin creates a decentralised identity and issues a **Manager** role credential to a new employee. Thirty seconds, live.
-2. Admin mints an asset NFT — a believable item such as a signal analyser with a realistic serial number — and assigns it to that identity.
-3. The employee attempts to transfer the asset to a colleague who holds only the **User** role. **The transaction reverts on chain, visibly. Pause here and let it land.**
-4. Admin revokes the Manager credential. The same transfer now fails for the original holder too, proving revocation propagates.
+1. Admin creates a decentralised identity and clears a new employee to **Secret**. Thirty seconds, live.
+2. Admin mints an asset NFT — a believable item such as a signal analyser with a realistic serial number, requiring **Secret** to hold — and assigns it to that identity.
+3. The employee attempts to transfer the asset to a colleague cleared only to **Restricted**. **The transaction reverts on chain, visibly. Pause here and let it land.**
+4. Admin revokes the employee's Secret clearance. The same transfer now fails for the original holder too, proving revocation propagates.
 5. Auditor view replays the entire history. Then **unplug the network cable** and run the offline verifier on an exported record — it still validates.
 
 ### Team allocation
@@ -361,15 +435,15 @@ once the code looks finished.
 
 | Risk | Mitigation |
 |---|---|
-| *"Why not just a database with an audit table?"* | An append-only table is append-only only while the administrator keeps it so. The DBA who can grant themselves a role can drop the trigger, edit the row and re-sign it. A multi-node network with validators in different departments moves integrity outside any one administrator's control. Also — the audit record here is not a log *about* the transaction, **it is the transaction**, so they can never disagree. |
+| *"Why not just a database with an audit table?"* | **The full answer is [`docs/WHY-BLOCKCHAIN.md`](docs/WHY-BLOCKCHAIN.md); read it before the final.** In short: concede that a competent centralised system gives you immutability, tamper evidence, role separation and an independent audit replica — because it does, and a judge who builds systems knows it. The property it does not give you is non-equivocation. A signed append-only log proves the history *you were shown* was not edited; it does not prove it is the history the *auditor* was shown, and one writer can maintain two correctly signed histories and serve one to each. Preventing that rather than noticing it at the next audit is consensus. Two smaller points support it: an auditor can read the canonical record without the audited party's cooperation, and the authorisation decision and its audit entry are one write rather than two that can diverge. **All of this holds only if the validators are in genuinely different hands** — see the same document on why that boundary is between organisations, not between BEL departments. If the deployment is single-authority, recommend Postgres; that answer scores better than defending a design the customer does not need. |
 | *"Where do private keys live?"* | Identities are smart-contract accounts, not raw keypairs. Recovery is an m-of-n guardian quorum with a time-lock and a mandatory notification event, so recovery cannot be abused as a silent takeover. |
 | *"What about DPDP compliance?"* | No personal data on chain — only DIDs, public keys, status bits and salted hashes. On an erasure request, the off-chain record is deleted and the salt rotated, so the on-chain hash becomes an irreversible orphan. |
 | *"What about post-quantum?"* | Hash-anchored records survive a quantum adversary; signature schemes are rotatable. Have a one-line migration answer ready — **do not over-claim**. |
 | Demo fails on venue network | The entire system runs locally. This PS has no external dependency at all, which is precisely why it was chosen. |
 | AI-generated contract contains an admin-grants-itself-everything flaw | Every contract is read line by line by a human before the final, with the access-control graph drawn on paper. **If we cannot explain our own permission structure on a whiteboard, we lose the round regardless of the demo.** |
 | *"Who physically issues the ID card / uploads the photo?"* | Deliberately out of scope, for the same reason a photo never touches the chain: it is personal data, more re-identifying than a name, and the system's job is to authenticate a credential, not manufacture one. `IdentityRegistry.Identity` holds only `did`, `status` and `registeredAt` — no name, no photo. Printing and photo capture stay an administrative process (HR / IT Security), exactly as today; a photo would live as a file in Postgres keyed to the `people` row, never referenced on chain even by hash. |
-| *"How do people log into the console — is that another central directory?"* | No. People sign in by **proving they hold a key**, which lives encrypted in their browser under a passphrase the server never sees; sign-in is a signature over a single-use nonce. Their role is then **read from `RoleRegistry`**, never stored, so revoking an Admin credential on chain closes the console too. A valid signature from a key with no credential is refused — authority comes from the chain, not from holding a key. Gate terminals are the exception and are provisioned as *devices*, the way a card reader is; that table holds no people. See §6. |
-| *"How does a guard know the card belongs to the person holding it?"* | Two checks, deliberately not one. **(1) Face matches card** is solved the way a passport already solves it — the photo is printed on the card, the guard compares it to the person in front of them, no lookup involved. **(2) The credential is currently valid** is the chain question: the card's QR encodes only the `did:ethr:<chainId>:<address>` — no name, safe to expose — and a scanner resolves it against `RoleRegistry.checkRole` and, for asset custody specifically, `AssetToken.ownerOf(tokenId)`. The blockchain was never meant to prove a face; it proves an authorization, the same separation Aadhaar makes between a biometric match and an authorization database. Not yet built as a console screen — the logic is a straight read of contracts already deployed, so it is a fast add if a live demo of it is ever needed. |
+| *"How do people log into the console — is that another central directory?"* | No. People sign in by **proving they hold a key**, which lives encrypted in their browser under a passphrase the server never sees; sign-in is a signature over a single-use nonce. What they may open is then **read from `RoleRegistry`**, never stored, so revoking someone's `ISSUER_ROLE` on chain closes their console too. It reads *authority*, not clearance — being cleared to Top Secret opens nothing (§6). A valid signature from a key holding no authority is refused, which is the case that proves authority comes from the chain rather than from possession of any key. Gate terminals are the exception and are provisioned as *devices*, the way a card reader is; that table holds no people. See §6. |
+| *"How does a guard know the card belongs to the person holding it?"* | Two checks, deliberately not one. **(1) Face matches card** is solved the way a passport already solves it — the photo is printed on the card, the guard compares it to the person in front of them, no lookup involved. **(2) The credential is currently valid** is the chain question: the card's QR encodes only the `did:ethr:<chainId>:<address>` — no name, safe to expose — and a scanner resolves it against `RoleRegistry.checkRole` and, for asset custody specifically, `AssetToken.ownerOf(tokenId)`. The blockchain was never meant to prove a face; it proves an authorization, the same separation Aadhaar makes between a biometric match and an authorization database. **Built and demonstrable** at `/gate` — `GateScanner` reads the QR with a camera, `gateCheckAction` accepts a DID or a bare address, and `lookupIdentity` resolves it against `checkRole` plus the holder's assets. It **fails closed**: if the chain cannot be reached the screen says so and tells the guard to call the issuing authority rather than showing a stale pass. A gate terminal signs in as a *device* (`gate-3`) and is kept out of the console — asserted by `auth.spec.ts`. |
 
 ---
 
@@ -381,16 +455,25 @@ once the code looks finished.
 pnpm install                    # install everything
 
 pnpm build                      # turbo: build all packages in dependency order
-pnpm test                       # turbo: run all tests — 97 across five packages
+pnpm test                       # turbo: run all tests — 100 across five packages
+                                # contracts 48, chain 14, custody 14, indexer 14, identity 10
 pnpm typecheck                  # turbo: typecheck everything — 11 tasks
 ```
 
-**Running the whole thing, from a clean machine.** Four terminals; the first
-three stay open.
+**Running the whole thing, from a clean machine.** Five terminals; the chain, the
+indexer and the console stay open.
+
+🔴 **The indexer is not optional.** The console's asset lists and the gate check
+read the indexer's Postgres projection, not the chain — see `loadAssets` in
+`apps/web/src/lib/state.ts` for why (a block-zero event scan is a time bomb on a
+chain that mines empty blocks forever). Skip step 4 and the console loads, signs
+you in, and shows **no equipment at all**, which looks exactly like a broken
+demo.
 
 ```bash
 # 1. Database — the console will not load without it
 docker compose -f infra/postgres/docker-compose.yml up -d
+pnpm --filter @sih26125/indexer db:push         # create the five tables (one-off)
 
 # 2. Chain — leave this running
 pnpm --filter @sih26125/contracts node          # Hardhat Network on :8545
@@ -398,9 +481,19 @@ pnpm --filter @sih26125/contracts node          # Hardhat Network on :8545
 # 3. Contracts + demo state (one-off, re-runnable any time)
 pnpm demo:reset                                 # deploy all five, seed the chain, reset people
 
-# 4. The console
+# 4. Indexer — leave this running; the console reads what it writes
+pnpm --filter @sih26125/indexer start
+
+# 5. The console
 pnpm --filter @sih26125/web dev                 # http://localhost:3000
 ```
+
+Order matters in one place: the indexer reads `deployments/localhost.json` at
+startup with no fallback, so **step 3 must have happened or it exits immediately**.
+Once running it backfills from block zero, so it catches up on its own and a
+restart never loses anything. An empty assets table right after a `demo:reset` is
+almost always step 4 having died on a missing deployment file — check that
+terminal before debugging anything else.
 
 Then open <http://localhost:3000> and sign in:
 
@@ -416,11 +509,6 @@ pnpm e2e                                        # resets, then runs all 15 Playw
 ```
 
 ```bash
-# Postgres — for the indexer and the console's people table
-docker compose -f infra/postgres/docker-compose.yml up -d
-pnpm --filter @sih26125/indexer db:push         # create the tables
-pnpm --filter @sih26125/indexer start           # the daemon — leave it running
-
 # Besu — the deployment target, not the daily loop
 pnpm --filter @sih26125/chain besu:genesis      # regenerate genesis + validator keys
 docker compose -f infra/besu/docker-compose.yml up -d
@@ -440,18 +528,23 @@ pnpm --filter @sih26125/verifier dev asset-1-custody.json  # or run straight fro
 - **TypeScript strict everywhere.** `noUncheckedIndexedAccess` is on.
 - **Solidity: custom errors, never `require` strings.** The UI decodes them; see § 7.
 - **Never put personal data on chain.** DIDs, public keys, status bits and salted hashes only. Names, employee numbers and departments live in Postgres.
-- **The Postgres index is a cache.** It must be rebuildable from chain events at any time, so it is never the source of truth.
+- **The Postgres index is a cache.** It must be rebuildable from chain events at any time, so it is never the source of truth. Reading *from* it is fine and now expected (the console's asset lists do); deciding what is true from it is not. The audit replay reads the chain directly for exactly this reason.
 - **Enforce permissions in the contract, never in the UI or an API route.** An API-route check is a convenience for the user, not a security control.
-- **Roles are `Admin`, `Manager`, `Auditor`, `User`** — the exact names from the problem statement. The `RoleRegistry.Role` enum is `None, User, Auditor, Manager, Admin` (ordinals 0–4).
+- **Clearance is `Restricted`, `Confidential`, `Secret`, `TopSecret`** — the `RoleRegistry.Role` enum is `None, Restricted, Confidential, Secret, TopSecret` (ordinals 0–4). It says what a person may *hold*. Authority — what a person may *do* — is separate and lives in the AccessControl roles below. See §6 before changing either.
 
 ### Two role systems — don't confuse them
 
-This trips people up. There are two separate access-control layers:
+This trips people up, and keeping them apart is a deliberate design decision
+rather than an accident of implementation (§6 records why):
 
-1. **OpenZeppelin `AccessControl` roles** (`ISSUER_ROLE`, `REVOKER_ROLE`, `DEFAULT_ADMIN_ROLE`) — *technical* roles gating **who may call a contract function** (who can mint, who can revoke).
-2. **`RoleRegistry.Role` business roles** (`Admin`, `Manager`, `Auditor`, `User`) — the *organisational* roles from the problem statement, gating **who may hold or receive an asset**.
+1. **Authority — OpenZeppelin `AccessControl` roles** (`ISSUER_ROLE`, `REVOKER_ROLE`, `AUDITOR_ROLE`, `DEFAULT_ADMIN_ROLE`), held on `RoleRegistry` and `AssetToken`. These gate **who may call a contract function** — who can mint, who can grant, who can revoke, who can inspect. They also decide **what the console opens**: `consoleRoleForAddress` reads `ISSUER_ROLE` and `AUDITOR_ROLE` and nothing else.
+2. **Clearance — the `RoleRegistry.Role` enum** (`Restricted`, `Confidential`, `Secret`, `TopSecret`), granted per account with an expiry and revocable. This gates **who may hold or receive an asset**, by comparison against the clearance the asset itself requires.
 
-`AssetToken.mint` is gated by (1). `AssetToken._update`'s transfer check consults (2).
+`AssetToken.mint` is gated by (1). `AssetToken._update`'s transfer check consults
+(2). Signing into the console is (1). **Neither implies the other** — a Top Secret
+clearance opens no screen, and an issuing authority with no clearance may move
+nothing. Granting someone a clearance and granting them authority are two separate
+transactions, and they are revoked separately.
 
 ### Design system
 
