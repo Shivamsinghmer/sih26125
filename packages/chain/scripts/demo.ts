@@ -119,7 +119,7 @@ async function main() {
   };
 
   // ------------------------------------------------- 1. identity + credential
-  step(1, "Admin issues a decentralised identity and a Manager credential");
+  step(1, "Admin issues a decentralised identity and a Secret clearance");
 
   const employeeDid = didFromAddress(employee.address, hardhat.id);
   await write(identityRegistry, IdentityRegistryArtifact.abi, "register", [employee.address, employeeDid]);
@@ -131,7 +131,7 @@ async function main() {
     Role.Secret,
     BigInt(expiresAt),
   ]);
-  ok("Manager role anchored in RoleRegistry");
+  ok("Secret clearance anchored in RoleRegistry");
 
   const credential = await issueRoleCredential({
     issuerPrivateKey: ACCOUNTS.admin,
@@ -153,7 +153,7 @@ async function main() {
     Role.Restricted,
     BigInt(expiresAt),
   ]);
-  ok(`Colleague registered holding only the User role: ${colleague.address}`);
+  ok(`Colleague registered cleared only to Restricted: ${colleague.address}`);
 
   // --------------------------------------------------------------- 2. mint
   step(2, "Admin mints an asset and assigns it to the employee");
@@ -171,11 +171,11 @@ async function main() {
     functionName: "ownerOf",
     args: [1n],
   });
-  ok(`${serial} minted as asset #1, requires a Manager credential to hold`);
+  ok(`${serial} minted as asset #1, requires a Secret clearance to hold`);
   ok(`Current holder: ${owner as string}`);
 
   // ---------------------------------------------------- 3. the blocked transfer
-  step(3, "Employee tries to transfer the asset to a User-only colleague");
+  step(3, "Employee tries to transfer the asset to a Restricted-only colleague");
 
   try {
     await write(
@@ -198,7 +198,7 @@ async function main() {
   }
 
   // ------------------------------------------------------------ 4. revocation
-  step(4, "Admin revokes the employee's Manager credential");
+  step(4, "Admin revokes the employee's Secret clearance");
 
   await write(roleRegistry, RoleRegistryArtifact.abi, "revokeBusinessRole", [
     employee.address,
@@ -206,7 +206,7 @@ async function main() {
   ]);
   ok("Revocation written on chain — a single transaction");
 
-  // Grant the colleague Manager so the *only* thing failing is the revoked holder.
+  // Clear the colleague to Secret so the *only* thing failing is the revoked holder.
   await write(roleRegistry, RoleRegistryArtifact.abi, "grantBusinessRole", [
     colleague.address,
     Role.Secret,
@@ -232,7 +232,7 @@ async function main() {
     colleague.address,
     [1n],
   ]);
-  ok("Offboarding: asset reassigned to a colleague who does hold a valid Manager credential");
+  ok("Offboarding: asset reassigned to a colleague who does hold a valid Secret clearance");
 
   // ----------------------------------------------------------------- 5. audit
   step(5, "Auditor replays the full history from chain events alone");

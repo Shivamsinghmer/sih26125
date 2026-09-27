@@ -4,8 +4,8 @@
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@sih26125/web", "dev"],
-      "port": 3000
+      "runtimeArgs": ["--filter", "@sih26125/web", "dev", "--port", "3100"],
+      "port": 3100
     }
   ]
 }
