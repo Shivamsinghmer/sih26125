@@ -1,0 +1,89 @@
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+
+const alertVariants = cva(
+  [
+    "group/alert relative grid w-full gap-1 rounded-3xl border px-6 py-5 text-left text-body",
+    "has-data-[slot=alert-action]:pr-24",
+    "has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-3",
+    "*:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current",
+    "*:[svg:not([class*='size-'])]:size-5",
+  ].join(" "),
+  {
+    variants: {
+      variant: {
+        default: "border-transparent bg-mist-gray text-foreground",
+        /**
+         * Refusal. The blocked handover is the loudest moment in the product and
+         * DESIGN.md gives it exactly this treatment — sienna ink on blush peach,
+         * earning the one-peach-card-per-page allowance because when it appears
+         * it is the most important thing on the screen.
+         */
+        refusal:
+          "border-transparent bg-blush-peach text-sienna-brown *:data-[slot=alert-description]:text-sienna-brown/80",
+        /** Fail-closed / cannot-reach states: hairline, no fill, no alarm. */
+        muted: "border-border bg-paper-white text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+function Alert({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
+  return (
+    <div
+      data-slot="alert"
+      role="alert"
+      className={cn(alertVariants({ variant }), className)}
+      {...props}
+    />
+  )
+}
+
+function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-title"
+      className={cn(
+        "text-body-lg font-[500] group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AlertDescription({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-description"
+      className={cn(
+        "max-w-[62ch] text-body text-pretty text-subtle [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-action"
+      className={cn("absolute top-5 right-6", className)}
+      {...props}
+    />
+  )
+}
+
+export { Alert, AlertTitle, AlertDescription, AlertAction }
