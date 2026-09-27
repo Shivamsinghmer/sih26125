@@ -4,6 +4,7 @@ import { ContractExcerpt } from "@/components/ContractExcerpt";
 import { FeatureShowcase } from "@/components/FeatureShowcase";
 import { GateScanner } from "@/components/GateScanner";
 import { SkyBackdrop } from "@/components/SkyBackdrop";
+import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth-actions";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/auth-types";
 
@@ -91,13 +92,22 @@ export default async function LandingPage() {
 
       <div className="mkt landing">
       <header className="landing__bar">
+        {/* Who this is for used to sit in a pill above the headline. A label
+            over a headline is the one pattern this page is not allowed; the
+            fact is not negotiable either, because it is the first thing a BEL
+            evaluator checks. So it moved here, where attribution belongs. */}
         <p className="landing__mark">
           <span>CredLock</span>
-          <span className="landing__mark-sub">SIH26125</span>
+          <span className="landing__mark-sub">
+            SIH26125
+            <span className="landing__mark-org"> · Bharat Electronics Limited · Ministry of Defence</span>
+          </span>
         </p>
-        <Link href={session ? ROLE_HOME[session.role] : "/login"} className="landing__cta">
-          {session ? `Continue as ${ROLE_LABEL[session.role]}` : "Sign in"}
-        </Link>
+        <Button asChild size="sm">
+          <Link href={session ? ROLE_HOME[session.role] : "/login"}>
+            {session ? `Continue as ${ROLE_LABEL[session.role]}` : "Sign in"}
+          </Link>
+        </Button>
       </header>
 
       <main>
@@ -107,11 +117,6 @@ export default async function LandingPage() {
             Type and controls stay Steep, so the page still reads as this
             system wearing the block's sky rather than as a second design. */}
         <section className="landing__hero">
-          <p className="landing__badge">
-            <span className="landing__badge-mark">SIH26125</span>
-            Bharat Electronics Limited · Ministry of Defence
-          </p>
-
           <h1 className="display-serif landing__headline">
             The asset refuses to move without a valid credential.
           </h1>
@@ -124,12 +129,14 @@ export default async function LandingPage() {
           </p>
 
           <div className="landing__actions">
-            <Link href="/login" className="landing__cta landing__cta--lg">
-              {session ? "Switch account" : "Sign in to the console"}
-            </Link>
-            <a href="#mechanism" className="landing__ghost">
-              How the refusal works
-            </a>
+            <Button asChild>
+              <Link href="/login">{session ? "Switch account" : "Sign in to the console"}</Link>
+            </Button>
+            {/* Paper-backed: a transparent ghost over the photograph lets the
+                clouds run through the pill and the outline alone carries it. */}
+            <Button asChild variant="ghost" className="bg-paper-white/80 hover:bg-paper-white">
+              <a href="#mechanism">How the refusal works</a>
+            </Button>
           </div>
         </section>
 
@@ -318,30 +325,8 @@ export default async function LandingPage() {
         }
         .landing__mark-sub { color: var(--mkt-faint); }
 
-        .landing__cta {
-          display: inline-flex;
-          align-items: center;
-          border-radius: 999px;
-          background: var(--mkt-ink);
-          color: #fff;
-          padding: 10px 20px;
-          font-size: 15px;
-          transition: opacity 160ms ease-out;
-        }
-        .landing__cta:hover { opacity: 0.88; }
-        .landing__cta--lg { padding: 13px 26px; font-size: 17px; }
-
-        .landing__ghost {
-          display: inline-flex;
-          align-items: center;
-          border-radius: 999px;
-          border: 1px solid var(--mkt-ink);
-          padding: 12px 25px;
-          font-size: 17px;
-          color: var(--mkt-ink);
-          transition: background-color 160ms ease-out;
-        }
-        .landing__ghost:hover { background: #f2f2f3; }
+        .landing__mark-org { color: var(--mkt-muted); }
+        @media (max-width: 860px) { .landing__mark-org { display: none; } }
 
         /* ----------------------------------------------------------- hero */
         /* Centred, single column. The block's own composition. */
@@ -356,40 +341,13 @@ export default async function LandingPage() {
           padding: clamp(8px, 1.7vh, 60px) 0 clamp(10px, 1.5vh, 40px);
         }
 
-        /* The block puts an uppercase tracked "NEW" pill here. That exact
-           treatment is on this project's anti-reference list, so the pill keeps
-           its position and loses the shouting: sentence case, no tracking, and
-           it carries the one fact this audience checks first. */
-        .landing__badge {
-          display: inline-flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          margin: 0;
-          padding: 6px 16px 6px 6px;
-          border: 1px solid #fff;
-          border-radius: 999px;
-          /* A bare outline vanished against the photograph; the block floats
-             this pill on white, and over a sky it needs to. */
-          background: #fff;
-          box-shadow: 0 2px 10px rgba(23, 25, 28, 0.06);
-          font-size: 13.5px;
-          color: var(--mkt-muted);
-        }
-        .landing__badge-mark {
-          padding: 3px 10px;
-          border-radius: 999px;
-          background: var(--mkt-ink);
-          color: #fff;
-          font-size: 12px;
-        }
-
         /* Centred and full-bleed, so it takes the block's larger scale without
            the four ragged lines a narrow column forced. Held at 82px: the
            impeccable ceiling is 96px, and above that a page is shouting. */
         .landing__headline {
-          margin: clamp(10px, 1.7vh, 26px) 0 0;
+          /* The badge that used to sit above this is gone, so the headline now
+             opens the hero and takes the room the pill occupied. */
+          margin: clamp(18px, 3.4vh, 56px) 0 0;
           /* Wide enough that balance splits the sentence in two — at 19ch it
              broke into three, and the third line was two words long. The
              measure is in ch, so the split holds at every size in the clamp. */
@@ -429,11 +387,8 @@ export default async function LandingPage() {
            only cramped ones tighten — type stays legible, spacing gives way. */
         @media (max-height: 950px) and (min-width: 760px) {
           .landing__bar { padding: clamp(8px, 1.3vh, 26px) 0; }
-          .landing__badge { padding: 4px 14px 4px 5px; font-size: 13px; }
           .landing__headline { font-size: clamp(30px, min(5.6vw, 4.9vh), 74px); }
           .landing__actions { margin-top: clamp(10px, 1.6vh, 32px); }
-          .landing__cta--lg { padding: 10px 22px; font-size: 16px; }
-          .landing__ghost { padding: 9px 21px; font-size: 16px; }
         }
 
         /* --------------------------------------------------------- the stage */

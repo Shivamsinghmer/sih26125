@@ -5,7 +5,8 @@ import { useActionState } from "react";
 import type { ActionResult } from "@/lib/action-types";
 import { IDLE } from "@/lib/action-types";
 import { ActionResultCard } from "./ActionResultCard";
-import { Field, PillButton, Select } from "./ui";
+import { Button } from "@/components/ui/button";
+import { Field, Select } from "@/components/ui/field";
 import type { PersonaOption } from "./TransferPanel";
 
 /**
@@ -50,7 +51,7 @@ export function RoleActionForm({
 
   return (
     <div className="flex flex-col gap-5">
-      <form action={formAction} className="flex flex-wrap items-end gap-4">
+      <form action={formAction} className="grid gap-x-4 gap-y-5 rounded-3xl bg-mist-gray p-5 sm:grid-cols-2 md:p-6">
         <Field label="Person">
           <Select name="persona" defaultValue={personas[1]?.id ?? personas[0]?.id}>
             {personas.map((p) => (
@@ -81,9 +82,11 @@ export function RoleActionForm({
           </Field>
         ) : null}
 
-        <PillButton type="submit" variant={variant} disabled={pending}>
-          {pending ? pendingLabel : submitLabel}
-        </PillButton>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-black/[0.06] pt-5 sm:col-span-2">
+          <Button type="submit" variant={variant} disabled={pending}>
+            {pending ? pendingLabel : submitLabel}
+          </Button>
+        </div>
       </form>
 
       <ActionResultCard result={result} />

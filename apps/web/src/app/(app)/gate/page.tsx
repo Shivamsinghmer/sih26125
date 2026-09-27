@@ -27,11 +27,16 @@ export default async function GatePage() {
       </PageHeading>
 
       {!deployment ? (
-        <div className="rounded-3xl bg-mist-gray px-8 py-7">
-          <p className="text-body leading-body">
-            The shared record cannot be reached, so no check can be trusted right
-            now. Do not wave anybody through on this screen&rsquo;s say-so &mdash;
-            call the issuing authority.
+        // Fail closed, and look it: this is a refusal to vouch for anyone, so it
+        // wears the refusal pair rather than a neutral "offline" grey that a
+        // guard under pressure could read as "nothing wrong".
+        <div role="alert" className="rounded-3xl bg-blush-peach px-7 py-7 text-sienna-brown md:px-9">
+          <p className="display-serif text-[clamp(26px,2.6vw,32px)] leading-[1.15] tracking-[-0.015em]">
+            No check can be trusted right now
+          </p>
+          <p className="mt-3 max-w-[60ch] text-body-lg leading-[1.45]">
+            The shared record cannot be reached. Do not wave anybody through on
+            this screen&rsquo;s say-so &mdash; call the issuing authority.
           </p>
         </div>
       ) : (

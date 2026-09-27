@@ -1,10 +1,9 @@
-import Link from "next/link";
-
+import { ArrowLink } from "@/components/ArrowLink";
 import { AssetsTable } from "@/components/AssetsTable";
 import { PageHeading } from "@/components/PageHeading";
 import { EventsOverTime, type Bucket } from "@/components/dash/EventsOverTime";
 import { ShareBarList, type ShareRow } from "@/components/dash/ShareBarList";
-import { Card } from "@/components/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { loadPeople, shortAddress } from "@/lib/chain";
 import { areaLabel } from "@/lib/audit-labels";
 import { loadAuditTrail, type AuditEntry } from "@/lib/audit";
@@ -31,9 +30,12 @@ export const dynamic = "force-dynamic";
  * count — "Who is holding what", not "Assets by holder". The reader is a stores
  * officer with a question, not an analyst browsing dimensions.
  *
- * Installing the block outright was not an option either way: it needs shadcn
- * scaffolding, and `shadcn init` rewrites globals.css, which is where the Steep
- * design system lives.
+ * Layout: one lead panel rather than six equal tiles. The activity chart is
+ * the only tile with a time axis and the only one worth looking *at*, so it
+ * takes the elevated surface and two thirds of the row; the machinery facts sit
+ * beside it as a quiet list, not as a fourth card. The four ranked lists answer
+ * four questions about the same people and items, so they share one surface
+ * and are separated by hairlines — four boxes implied four unrelated things.
  */
 
 const BUCKET_COUNT = 14;
@@ -146,58 +148,59 @@ function assetsByHolder(
 function NotDeployed() {
   return (
     <Card>
-      <h2 className="display-serif text-heading-sm leading-heading-sm tracking-heading-sm">
-        The shared record cannot be reached
-      </h2>
-      <p className="mt-3 max-w-[62ch] text-body leading-body">
-        Nothing is lost and nothing is wrong with what you were doing. The
-        system needs to be started up again — ask whoever looks after it, then
-        reload this page.
-      </p>
-      <p className="mt-5 text-caption leading-caption text-label">
-        For whoever looks after it:
-      </p>
-      <pre className="mono-addr mt-2 overflow-x-auto rounded-2xl bg-paper-white px-5 py-4 leading-relaxed">
-        {`pnpm --filter @sih26125/contracts node
+      <CardHeader>
+        <CardTitle className="display-serif text-heading-sm font-normal tracking-heading-sm">
+          The shared record cannot be reached
+        </CardTitle>
+        <CardDescription className="text-body leading-body">
+          Nothing is lost and nothing is wrong with what you were doing. The
+          system needs to be started up again — ask whoever looks after it, then
+          reload this page.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-caption leading-caption text-label">For whoever looks after it:</p>
+        <pre className="mono-addr mt-2 overflow-x-auto rounded-2xl bg-paper-white px-5 py-4 leading-relaxed">
+          {`pnpm --filter @sih26125/contracts node
 pnpm demo:reset`}
-      </pre>
+        </pre>
+      </CardContent>
     </Card>
   );
 }
 
-function Tile({
+/** A titled block inside a shared surface: heading, optional link, content. */
+function Panel({
   title,
   link,
   children,
-  wide = false,
+  className = "",
 }: {
   title: string;
   link?: { href: string; label: string };
   children: React.ReactNode;
-  wide?: boolean;
+  className?: string;
 }) {
   return (
-    <div
-      className={`flex flex-col rounded-3xl bg-mist-gray px-5 py-5 ${
-        wide ? "md:col-span-2" : ""
-      }`}
-    >
+    <section className={`flex min-w-0 flex-col ${className}`}>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-caption leading-caption text-ink-black">{title}</h2>
-        {link ? (
-          <Link
-            href={link.href}
-            // shrink-0 and nowrap: a two-line tile title was squeezing the link
-            // until its own arrow wrapped onto a second line under it.
-            className="shrink-0 whitespace-nowrap text-[12px] text-label underline underline-offset-2 hover:text-ink-black"
-          >
-            {link.label}
-          </Link>
-        ) : null}
+        <h2 className="text-body leading-body font-[480]">{title}</h2>
+        {link ? <ArrowLink href={link.href}>{link.label}</ArrowLink> : null}
       </div>
       {children}
-    </div>
+    </section>
   );
+}
+
+/** Hairlines between the four ranked lists, following the grid at each width. */
+function dividerFor(i: number): string {
+  const line = "border-black/[0.06]";
+  return [
+    i > 0 ? `border-t ${line}` : "",
+    i === 1 ? "md:border-t-0 md:border-l" : "",
+    i === 2 ? "md:border-l-0 xl:border-t-0 xl:border-l" : "",
+    i === 3 ? "md:border-l xl:border-t-0" : "",
+  ].join(" ");
 }
 
 export default async function DashboardPage() {
@@ -223,6 +226,42 @@ export default async function DashboardPage() {
     p.holdings.some((h) => h.validity === "valid"),
   ).length;
 
+  const facts: [string, string][] = [
+    ["Changes recorded", entries.length === 0 ? "None yet" : String(entries.length)],
+    ["People on file", String(state.personas.length)],
+    ["With a clearance in date", String(credentialled)],
+    ["Items under custody", String(state.assets.length)],
+  ];
+
+  const questions = [
+    {
+      title: "Clearances by status",
+      link: { href: "/console/credentials", label: "Give one" },
+      body: <ShareBarList rows={clearanceStatus(state)} />,
+    },
+    {
+      title: "Who is cleared for what",
+      link: { href: "/console/people", label: "People" },
+      body: (
+        <ShareBarList
+          rows={clearancesByLevel(state)}
+          emptyNote="Nobody holds a clearance that is in date."
+        />
+      ),
+    },
+    {
+      title: "What has been changing",
+      body: <ShareBarList rows={changesByArea(entries)} emptyNote="Nothing recorded yet." />,
+    },
+    {
+      title: "Who is holding what",
+      link: { href: "/console/assets", label: "Equipment" },
+      body: (
+        <ShareBarList rows={assetsByHolder(state, people)} emptyNote="No equipment added yet." />
+      ),
+    },
+  ];
+
   return (
     <>
       <PageHeading title="Dashboard">
@@ -231,108 +270,115 @@ export default async function DashboardPage() {
         out of date.
       </PageHeading>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Tile title="Activity over time" wide link={{ href: "/audit", label: "See the history →" }}>
-          <EventsOverTime buckets={bucketEvents(entries)} />
-        </Tile>
+      {/* lead row */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card variant="elevated" className="px-6 md:px-7">
+          <Panel title="Activity over time" link={{ href: "/audit", label: "See the history" }}>
+            <EventsOverTime buckets={bucketEvents(entries)} />
+          </Panel>
+        </Card>
 
-        <Tile
-          title="Clearances by status"
-          link={{ href: "/console/credentials", label: "Give one →" }}
-        >
-          <ShareBarList rows={clearanceStatus(state)} />
-        </Tile>
-
-        {/* The one tile that is genuinely about the machinery. Kept, because
-            somebody has to be able to answer "is this thing actually on", and
-            labelled so that everyone else can tell it is not about their work. */}
-        <Tile title="System">
-          <dl className="mt-4 flex flex-col gap-3">
-            {[
-              ["Status", "Connected"],
-              ["Changes recorded", entries.length === 0 ? "—" : String(entries.length)],
-              ["People on file", String(state.personas.length)],
-              ["With a clearance", String(credentialled)],
-            ].map(([k, v]) => (
-              <div key={k} className="flex items-baseline justify-between gap-3">
+        {/* The one block genuinely about the machinery, set as a plain list
+            rather than a card: somebody has to be able to answer "is this
+            thing on", and everyone else should be able to tell at a glance
+            that it is not about their work. */}
+        <section className="flex flex-col rounded-3xl border border-border px-6 py-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-body leading-body font-[480]">System</h2>
+            <span className="inline-flex items-center gap-2 text-caption text-subtle">
+              <span
+                aria-hidden
+                className="size-[7px] rounded-full bg-ink-black shadow-[0_0_0_3px_rgba(23,25,28,0.08)]"
+              />
+              Connected
+            </span>
+          </div>
+          <dl className="mt-auto flex flex-col pt-5">
+            {facts.map(([k, v]) => (
+              <div
+                key={k}
+                className="flex items-baseline justify-between gap-3 border-t border-border py-3 last:pb-0"
+              >
                 <dt className="text-caption leading-caption text-label">{k}</dt>
-                <dd className="mono-addr text-ink-black">{v}</dd>
+                <dd className="tabular text-body-lg leading-none">{v}</dd>
               </div>
             ))}
           </dl>
-        </Tile>
-
-        <Tile title="Who is cleared for what" link={{ href: "/console/people", label: "People →" }}>
-          <ShareBarList
-            rows={clearancesByLevel(state)}
-            emptyNote="Nobody holds a clearance that is in date."
-          />
-        </Tile>
-
-        <Tile title="What has been changing">
-          <ShareBarList rows={changesByArea(entries)} emptyNote="Nothing recorded yet." />
-        </Tile>
-
-        <Tile title="Who is holding what" link={{ href: "/console/assets", label: "Equipment →" }}>
-          <ShareBarList
-            rows={assetsByHolder(state, people)}
-            emptyNote="No equipment added yet."
-          />
-        </Tile>
+        </section>
       </div>
 
-      <section className="mt-14">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-subheading leading-subheading">Equipment and who holds it</h2>
-          <Link
-            href="/console/assets"
-            className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
+      {/* four questions, one surface */}
+      <div className="mt-5 grid rounded-3xl bg-mist-gray md:grid-cols-2 xl:grid-cols-4">
+        {questions.map((q, i) => (
+          <Panel
+            key={q.title}
+            title={q.title}
+            link={q.link}
+            className={`px-6 py-6 ${dividerFor(i)}`}
           >
-            Manage equipment →
-          </Link>
+            {q.body}
+          </Panel>
+        ))}
+      </div>
+
+      {/* equipment */}
+      <section className="mt-16">
+        <div className="flex items-baseline justify-between gap-4 border-b border-border pb-4">
+          <h2 className="text-subheading leading-subheading font-[480]">
+            Equipment and who holds it
+          </h2>
+          <ArrowLink href="/console/assets">Manage equipment</ArrowLink>
         </div>
-        <div className="mt-5">
+        <div className="mt-2">
           <AssetsTable assets={state.assets} people={people} equipment={equipment} />
         </div>
       </section>
 
-      <section className="mt-14">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-subheading leading-subheading">What happened recently</h2>
-          <Link
-            href="/audit"
-            className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
-          >
-            See everything →
-          </Link>
+      {/* recent */}
+      <section className="mt-16">
+        <div className="flex items-baseline justify-between gap-4 border-b border-border pb-4">
+          <h2 className="text-subheading leading-subheading font-[480]">What happened recently</h2>
+          <ArrowLink href="/audit">See everything</ArrowLink>
         </div>
 
         {recent.length === 0 ? (
-          <p className="mt-5 text-body leading-body text-label">
-            Nothing has been recorded yet.
-          </p>
+          <p className="mt-6 text-body leading-body text-label">Nothing has been recorded yet.</p>
         ) : (
-          <ul className="mt-5 flex flex-col">
+          // A short timeline: one spine, one node per change. Entries flagged
+          // upstream as emphasis (revocations and the like) take a filled sienna
+          // node and sienna text, never colour alone.
+          <ol className="relative mt-2">
             {recent.map((entry) => (
               <li
                 key={`${entry.transactionHash}-${entry.logIndex}`}
-                className="border-t border-mist-gray py-4"
+                className="timeline-row relative grid grid-cols-[20px_minmax(0,1fr)] gap-x-4 py-4"
               >
-                <p
-                  className={
-                    entry.emphasis
-                      ? "text-body leading-body text-sienna-brown"
-                      : "text-body leading-body"
-                  }
-                >
-                  {entry.description}
-                </p>
-                <p className="text-caption leading-caption text-subtle">
-                  {areaLabel(entry.contract)}
-                </p>
+                <span
+                  aria-hidden
+                  className={`relative z-10 mt-[7px] size-[11px] rounded-full ${
+                    entry.emphasis ? "bg-sienna-brown" : "bg-paper-white"
+                  }`}
+                  style={{
+                    boxShadow: entry.emphasis
+                      ? "0 0 0 3px var(--surface-canvas)"
+                      : "inset 0 0 0 1.5px #b6bac3, 0 0 0 3px var(--surface-canvas)",
+                  }}
+                />
+                <div className="min-w-0">
+                  <p
+                    className={`text-body leading-body text-pretty ${
+                      entry.emphasis ? "text-sienna-brown" : ""
+                    }`}
+                  >
+                    {entry.description}
+                  </p>
+                  <p className="mt-0.5 text-caption leading-caption text-label">
+                    {areaLabel(entry.contract)}
+                  </p>
+                </div>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
       </section>
     </>

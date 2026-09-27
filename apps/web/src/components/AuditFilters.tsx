@@ -5,6 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { areaLabel, changeLabel } from "@/lib/audit-labels";
 import type { AuditPage } from "@/lib/audit";
+import { Button } from "@/components/ui/button";
+import { Field, Select } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 /**
  * Filters that apply as you change them.
@@ -70,14 +73,12 @@ export function AuditFilters({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-2">
-          <span className="text-caption leading-caption text-label">Area</span>
-          <select
+      <div className="grid items-end gap-3 rounded-3xl bg-mist-gray p-4 md:grid-cols-[minmax(0,12rem)_minmax(0,14rem)_minmax(0,1fr)_auto] md:p-5">
+        <Field label="Area">
+          <Select
             name="contract"
             value={current.contract}
             onChange={(e) => navigate({ contract: e.target.value })}
-            className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
           >
             <option value="all">Everything</option>
             {result.contracts.map((c) => (
@@ -85,16 +86,14 @@ export function AuditFilters({
                 {areaLabel(c)}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-caption leading-caption text-label">Kind of change</span>
-          <select
+        <Field label="Kind of change">
+          <Select
             name="event"
             value={current.event}
             onChange={(e) => navigate({ event: e.target.value })}
-            className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
           >
             <option value="all">Any change</option>
             {result.eventNames.map((e) => (
@@ -102,33 +101,33 @@ export function AuditFilters({
                 {changeLabel(e)}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
 
-        <label className="flex min-w-[240px] flex-1 flex-col gap-2">
-          <span className="text-caption leading-caption text-label">Search</span>
-          <input
+        <Field label="Search">
+          <Input
             name="q"
+            type="search"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="a name, or an item number like #1"
-            className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
+            placeholder="A name, or an item number like #1"
           />
-        </label>
+        </Field>
 
-        {filtered ? (
-          <button
-            type="button"
-            onClick={() => {
-              setText("");
-              applied.current = "";
-              startTransition(() => router.replace(pathname, { scroll: false }));
-            }}
-            className="rounded-full border border-mist-gray px-5 py-3 text-body text-label hover:border-ink-black hover:text-ink-black"
-          >
-            Clear
-          </button>
-        ) : null}
+        {/* Always rendered, disabled when there is nothing to clear, so the row
+            does not reflow the moment a filter is applied. */}
+        <Button
+          type="button"
+          variant="quiet"
+          disabled={!filtered}
+          onClick={() => {
+            setText("");
+            applied.current = "";
+            startTransition(() => router.replace(pathname, { scroll: false }));
+          }}
+        >
+          Clear
+        </Button>
       </div>
 
       <p className="text-caption leading-caption text-subtle" aria-live="polite">

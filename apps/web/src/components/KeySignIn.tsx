@@ -8,7 +8,8 @@ import { ROLE_HOME } from "@/lib/auth-types";
 import { enrolKey, forgetKeystore, readKeystore, unlockKey, type StoredKeystore } from "@/lib/keystore";
 import { requestNonce, verifySignIn } from "@/lib/siwe-actions";
 import { SIWE_IDLE, type SiweState } from "@/lib/siwe-types";
-import { PillButton } from "./ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 function shorten(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -135,13 +136,12 @@ export function KeySignIn() {
 
           <label className="flex flex-col gap-2">
             <span className="text-caption leading-caption text-label">Passphrase</span>
-            <input
+            <Input
               name="passphrase"
               type="password"
               autoComplete="current-password"
               autoFocus
               required
-              className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
             />
           </label>
 
@@ -152,9 +152,9 @@ export function KeySignIn() {
           ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
-            <PillButton type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy}>
               {busy ? "Signing…" : "Unlock and sign in"}
-            </PillButton>
+            </Button>
             <button
               type="button"
               onClick={() => {
@@ -175,13 +175,13 @@ export function KeySignIn() {
             <span className="text-caption leading-caption text-label">
               Private key
             </span>
-            <input
+            <Input
               name="privateKey"
               autoComplete="off"
               spellCheck={false}
               placeholder="0x…"
               required
-              className="mono-addr rounded-2xl border border-mist-gray bg-paper-white px-4 py-3"
+              className="mono-addr"
             />
           </label>
 
@@ -189,13 +189,12 @@ export function KeySignIn() {
             <span className="text-caption leading-caption text-label">
               Passphrase to encrypt it in this browser
             </span>
-            <input
+            <Input
               name="passphrase"
               type="password"
               autoComplete="new-password"
               minLength={8}
               required
-              className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
             />
           </label>
 
@@ -206,9 +205,9 @@ export function KeySignIn() {
           ) : null}
 
           <div>
-            <PillButton type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy}>
               {busy ? "Storing…" : "Store key and sign in"}
-            </PillButton>
+            </Button>
           </div>
 
           <p className="text-caption leading-caption text-subtle">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLink } from "@/components/ArrowLink";
 
 import { PageHeading } from "@/components/PageHeading";
 import { HowItFitsTogether, WhatHappensOnHandover } from "@/components/help/Diagrams";
@@ -62,12 +63,7 @@ function Example({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h3 className="text-subheading leading-subheading">{title}</h3>
         {href && linkLabel ? (
-          <Link
-            href={href}
-            className="text-caption leading-caption text-label underline underline-offset-2 hover:text-ink-black"
-          >
-            {linkLabel} &rarr;
-          </Link>
+          <ArrowLink href={href}>{linkLabel}</ArrowLink>
         ) : null}
       </div>
 

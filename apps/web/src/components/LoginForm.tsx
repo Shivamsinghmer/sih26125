@@ -4,7 +4,8 @@ import { useActionState } from "react";
 
 import { loginAction } from "@/lib/auth-actions";
 import { LOGIN_IDLE } from "@/lib/login-types";
-import { PillButton } from "./ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, LOGIN_IDLE);
@@ -13,23 +14,21 @@ export function LoginForm() {
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-2">
         <span className="text-caption leading-caption text-label">Terminal ID</span>
-        <input
+        <Input
           name="username"
           autoComplete="username"
           autoFocus
           required
-          className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
         />
       </label>
 
       <label className="flex flex-col gap-2">
         <span className="text-caption leading-caption text-label">Password</span>
-        <input
+        <Input
           name="password"
           type="password"
           autoComplete="current-password"
           required
-          className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
         />
       </label>
 
@@ -40,9 +39,9 @@ export function LoginForm() {
       ) : null}
 
       <div className="mt-2">
-        <PillButton type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? "Signing in…" : "Sign in as terminal"}
-        </PillButton>
+        </Button>
       </div>
     </form>
   );

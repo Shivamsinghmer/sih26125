@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { AuditPage } from "@/lib/audit";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 /** Page links that carry the active filters, so paging never silently resets them. */
 export function AuditPagination({
@@ -26,31 +27,29 @@ export function AuditPagination({
   const next = result.page < result.pageCount ? result.page + 1 : null;
 
   return (
-    <nav className="flex items-center justify-between gap-4 border-t border-mist-gray pt-5">
+    <nav aria-label="History pages" className="flex items-center justify-between gap-4">
       {previous ? (
-        <Link
-          href={href(previous)}
-          className="rounded-full border border-mist-gray px-4 py-2 text-caption leading-caption text-label hover:border-ink-black hover:text-ink-black"
-        >
-          ← Newer
-        </Link>
+        <Button asChild variant="ghost" size="sm">
+          <Link href={href(previous)}>← Newer</Link>
+        </Button>
       ) : (
-        <span className="text-caption leading-caption text-subtle">← Newer</span>
+        <span aria-disabled className={buttonVariants({ variant: "ghost", size: "sm" }) + " opacity-35"}>
+          ← Newer
+        </span>
       )}
 
-      <span className="text-caption leading-caption text-label">
+      <span className="tabular text-caption leading-caption text-label">
         Page {result.page} of {result.pageCount}
       </span>
 
       {next ? (
-        <Link
-          href={href(next)}
-          className="rounded-full border border-mist-gray px-4 py-2 text-caption leading-caption text-label hover:border-ink-black hover:text-ink-black"
-        >
-          Older →
-        </Link>
+        <Button asChild variant="ghost" size="sm">
+          <Link href={href(next)}>Older →</Link>
+        </Button>
       ) : (
-        <span className="text-caption leading-caption text-subtle">Older →</span>
+        <span aria-disabled className={buttonVariants({ variant: "ghost", size: "sm" }) + " opacity-35"}>
+          Older →
+        </span>
       )}
     </nav>
   );

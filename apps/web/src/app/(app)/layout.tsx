@@ -46,13 +46,14 @@ export default async function AppLayout({
             ? `chain ${deployment.chainId} · ${shortAddress(deployment.contracts.AssetToken)}`
             : undefined
         }
+        footerAction={<SignOutButton />}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-end px-6 pb-2 pt-4 md:px-10">
-          <SignOutButton />
-        </header>
-        <main className="min-w-0 flex-1 px-6 pb-24 pt-10 md:px-10">{children}</main>
+        {/* Capped: tables and ranked lists stop being scannable past ~1280px,
+            and on a wide monitor the eye would otherwise cross a metre of
+            whitespace to get from a label to its value. */}
+        <main className="w-full max-w-[1280px] min-w-0 flex-1 px-6 pt-12 pb-24 md:px-12">{children}</main>
       </div>
     </div>
   );

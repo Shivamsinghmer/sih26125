@@ -7,7 +7,9 @@ import { mintAssetAction } from "@/lib/actions";
 import { ActionResultCard } from "./ActionResultCard";
 import { ROLE_OPTIONS } from "./RoleActionForm";
 import type { PersonaOption } from "./TransferPanel";
-import { Field, PillButton, Select } from "./ui";
+import { Button } from "@/components/ui/button";
+import { Field, Select } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 /**
  * Adding a piece of equipment.
@@ -27,24 +29,18 @@ export function MintPanel({ personas }: { personas: PersonaOption[] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <form action={formAction} className="flex flex-wrap items-end gap-4">
+      <form action={formAction} className="grid gap-x-4 gap-y-5 rounded-3xl bg-mist-gray p-5 sm:grid-cols-2 md:p-6">
         <Field label="Equipment">
-          <input
-            name="name"
-            required
-            maxLength={80}
-            placeholder="Oscilloscope OS-2140"
-            className="w-[240px] rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body placeholder:text-label"
-          />
+          <Input name="name" required maxLength={80} placeholder="Oscilloscope OS-2140" />
         </Field>
 
         <Field label="Serial number">
-          <input
+          <Input
             name="serial"
             required
             maxLength={40}
             placeholder="OS2140-0007"
-            className="w-[180px] rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body placeholder:text-label"
+            className="font-mono text-[15px] tracking-tight"
           />
         </Field>
 
@@ -68,9 +64,11 @@ export function MintPanel({ personas }: { personas: PersonaOption[] }) {
           </Select>
         </Field>
 
-        <PillButton type="submit" disabled={pending}>
-          {pending ? "Adding…" : "Add equipment"}
-        </PillButton>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-black/[0.06] pt-5 sm:col-span-2">
+          <Button type="submit" disabled={pending}>
+            {pending ? "Adding…" : "Add equipment"}
+          </Button>
+        </div>
       </form>
 
       <ActionResultCard result={result} />

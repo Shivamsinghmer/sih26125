@@ -1,6 +1,7 @@
 import { AuditFilters } from "@/components/AuditFilters";
 import { AuditPagination } from "@/components/AuditPagination";
 import { AuditTrail } from "@/components/AuditTrail";
+import { RecordUnreachable } from "@/components/FormSection";
 import { PageHeading } from "@/components/PageHeading";
 import { loadAuditTrail, queryAuditTrail } from "@/lib/audit";
 
@@ -40,12 +41,7 @@ export default async function AuditPage({
       </PageHeading>
 
       {entries === null ? (
-        <div className="rounded-3xl bg-mist-gray px-8 py-7">
-          <p className="text-body leading-body">
-            The shared record cannot be reached at the moment. Ask whoever looks
-            after the system, then reload this page.
-          </p>
-        </div>
+        <RecordUnreachable />
       ) : (
         (() => {
           const result = queryAuditTrail(entries, {

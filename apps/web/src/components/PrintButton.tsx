@@ -1,12 +1,12 @@
 "use client";
 
-import { PillButton } from "./ui";
+import { Button } from "@/components/ui/button";
 
 /** window.print() needs a client boundary; everything else on the card page is server-rendered. */
 export function PrintButton() {
   return (
-    <PillButton type="button" onClick={() => window.print()}>
+    <Button type="button" onClick={() => window.print()}>
       Print card
-    </PillButton>
+    </Button>
   );
 }

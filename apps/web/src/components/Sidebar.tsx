@@ -12,10 +12,11 @@ import type { NavGroup } from "@/lib/nav";
  *
  * Structure follows the @efferd/app-shell-5 block: a mark and a collapse
  * trigger in the header, a search field, grouped nav with an icon and an active
- * state on every item, and a footer carrying who is signed in. Rebuilt in Steep
- * rather than installed — the block sits on shadcn's sidebar primitive plus
- * seven more of its components, and `shadcn init` rewrites globals.css, which
- * is where this project's design system lives.
+ * state on every item, and a footer carrying who is signed in. Kept hand-built
+ * rather than swapped for shadcn's sidebar primitive now that shadcn is in the
+ * project: the rail's collapse, cmd-K and sub-link behaviour are already tuned
+ * here, and the primitive would bring a provider, a cookie and a mobile sheet
+ * this console does not use.
  *
  * Two of its features were dropped rather than faked. Its theme switcher has
  * nothing to switch: this app ships one committed light theme. Its "latest
@@ -47,6 +48,7 @@ export function Sidebar({
   roleLabel,
   chainNote,
   chainDetail,
+  footerAction,
 }: {
   groups: NavGroup[];
   who: string;
@@ -55,6 +57,8 @@ export function Sidebar({
   chainNote?: string;
   /** The identifiers behind it, for whoever is diagnosing rather than working. */
   chainDetail?: string;
+  /** Sign-out, kept with the identity it ends rather than alone in a header. */
+  footerAction?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -123,7 +127,7 @@ export function Sidebar({
   return (
     <aside
       data-collapsed={collapsed ? "true" : "false"}
-      className="rail flex w-full shrink-0 flex-col gap-4 border-b border-mist-gray px-6 py-5 md:sticky md:top-0 md:h-screen md:overflow-hidden md:border-b-0 md:border-r"
+      className="rail flex w-full shrink-0 flex-col gap-5 border-b border-sidebar-border bg-sidebar px-6 py-5 md:sticky md:top-0 md:h-screen md:overflow-hidden md:border-b-0 md:border-r"
     >
       <div className="rail__top">
         <Link href="/" className="rail__mark">
@@ -152,15 +156,33 @@ export function Sidebar({
         <label className="sr-only" htmlFor="nav-search">
           Filter navigation
         </label>
-        <input
-          id="nav-search"
-          ref={searchRef}
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search screens…"
-          className="w-full rounded-2xl border border-mist-gray bg-paper-white px-3 py-2 text-caption leading-caption text-ink-black placeholder:text-label focus:border-ink-black focus:outline-none"
-        />
+        <div className="relative">
+          <svg
+            aria-hidden
+            viewBox="0 0 18 18"
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-label"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          >
+            <circle cx="8" cy="8" r="4.75" />
+            <path d="m11.6 11.6 3.4 3.4" />
+          </svg>
+          <input
+            id="nav-search"
+            ref={searchRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search screens"
+            className="h-10 w-full rounded-full border border-sidebar-border bg-paper-white pr-14 pl-9 text-caption text-ink-black transition-[border-color] duration-150 placeholder:text-label hover:border-[#d5d6da] focus-visible:border-ink-black focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+          />
+          {/* The shortcut the handler above listens for, shown where it acts. */}
+          <kbd className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md border border-sidebar-border bg-fog-white px-1.5 py-0.5 font-sans text-[11px] leading-none text-label">
+            Ctrl K
+          </kbd>
+        </div>
       </div>
 
       <nav className="rail__nav flex min-h-0 flex-1 flex-col gap-4">
@@ -221,23 +243,26 @@ export function Sidebar({
       </nav>
 
       <div className="rail__foot">
-        <div className="rail__who">
-          <p className="text-caption leading-caption text-ink-black">{who}</p>
-          <p className="text-caption leading-caption text-label">{roleLabel}</p>
+        <div className="rail__who flex items-center gap-3">
+          <span
+            aria-hidden
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink-black text-caption text-paper-white"
+          >
+            {who.trim().charAt(0)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-caption leading-tight text-ink-black">{who}</p>
+            <p className="truncate text-[13px] leading-tight text-label">{roleLabel}</p>
+          </div>
+          {footerAction}
         </div>
 
-        {/* Collapsed, the initial stands in for the name — and carries the full
-            name as its accessible label rather than losing it. */}
-        <span
-          aria-label={`${who}, ${roleLabel}`}
-          title={`${who} · ${roleLabel}`}
-          className="rail__initial"
-        >
-          {who.trim().charAt(0)}
-        </span>
 
         {chainNote ? (
           <p className="rail__chain" title={chainDetail}>
+            {/* A lit or unlit dot, so "is this thing on" is answered before the
+                sentence is read. Ink when connected; a hollow ring when not. */}
+            <span aria-hidden className="rail__chain-dot" data-on={chainDetail ? "true" : "false"} />
             {chainNote}
           </p>
         ) : null}
@@ -280,9 +305,9 @@ export function Sidebar({
         .rail__nav::-webkit-scrollbar-track { background: transparent; }
 
         .rail__group-title {
-          font-size: 11px;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
+          padding: 0 11px;
+          font-size: 12px;
+          font-weight: 480;
           color: #616675;
         }
 
@@ -302,9 +327,17 @@ export function Sidebar({
           color: #414755;
           transition: background-color 160ms ease-out, color 160ms ease-out;
         }
-        .rail__link:hover { background: #f2f2f3; color: #17191c; }
-        .rail__link--active { background: #17191c; color: #fff; }
-        .rail__link--active:hover { background: #17191c; color: #fff; }
+        .rail__link:hover { background: #f0f0f2; color: #17191c; }
+        /* Active is a raised white tab on the fog layer, not a solid ink bar:
+           ink is the primary *action* colour, and a nav item is not an action.
+           The hairline and the lift say "you are here" without competing with
+           the one filled button on the page. */
+        .rail__link--active,
+        .rail__link--active:hover {
+          background: #fff;
+          color: #17191c;
+          box-shadow: 0 0 0 1px rgba(23, 25, 28, 0.07), 0 1px 3px rgba(23, 25, 28, 0.06);
+        }
 
         /* ---------------------------------------------------------- sections */
         /* What you can do once you are there, revealed on hover, on keyboard
@@ -355,24 +388,28 @@ export function Sidebar({
           display: flex;
           flex-direction: column;
           gap: 8px;
-          border-top: 1px solid #f2f2f3;
-          padding-top: 14px;
-        }
-        .rail__initial {
-          display: none;
-          height: 32px;
-          width: 32px;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          background: #17191c;
-          color: #fff;
-          font-size: 15px;
+          gap: 12px;
+          border-top: 1px solid #e7e7ea;
+          padding-top: 16px;
         }
         .rail__chain {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           color: #616675;
           font-size: 12.5px;
           line-height: 1.35;
+        }
+        .rail__chain-dot {
+          width: 7px;
+          height: 7px;
+          flex: none;
+          border-radius: 999px;
+          box-shadow: inset 0 0 0 1.5px #616675;
+        }
+        .rail__chain-dot[data-on="true"] {
+          background: #17191c;
+          box-shadow: 0 0 0 3px rgba(23, 25, 28, 0.08);
         }
 
         /* ---------------------------------------------------------- collapse */
@@ -388,17 +425,13 @@ export function Sidebar({
            against. Near-paper, so the sky reads through the edges and the text
            does not have to compete; the blur is a progressive enhancement and
            the alpha alone is sufficient without it. */
+        /* The second neutral layer, one step off the paper canvas. It used to be
+           frosted glass over a sky photograph; the console dropped the sky, and
+           a blur over flat white is decoration pretending to be depth. */
         .rail {
-          background: rgba(255, 255, 255, 0.72);
           transition: flex-basis 200ms cubic-bezier(0.22, 1, 0.36, 1),
             max-width 200ms cubic-bezier(0.22, 1, 0.36, 1),
             width 200ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        @supports (backdrop-filter: blur(1px)) {
-          .rail {
-            background: rgba(255, 255, 255, 0.58);
-            backdrop-filter: blur(14px) saturate(1.1);
-          }
         }
 
         @media (min-width: 768px) {
@@ -428,7 +461,7 @@ export function Sidebar({
           .rail[data-collapsed="true"] .rail__group-title,
           .rail[data-collapsed="true"] .rail__label,
           .rail[data-collapsed="true"] .rail__sections,
-          .rail[data-collapsed="true"] .rail__who,
+          .rail[data-collapsed="true"] .rail__who > div,
           .rail[data-collapsed="true"] .rail__chain {
             display: none;
           }
@@ -440,7 +473,9 @@ export function Sidebar({
             padding-right: 8px;
           }
           .rail[data-collapsed="true"] .rail__foot { align-items: center; }
-          .rail[data-collapsed="true"] .rail__initial { display: flex; }
+          /* Collapsed, the identity row stacks: the monogram stands in for the
+             name, and sign-out stays reachable underneath it. */
+          .rail[data-collapsed="true"] .rail__who { flex-direction: column; gap: 6px; }
         }
 
         @media (prefers-reduced-motion: reduce) {

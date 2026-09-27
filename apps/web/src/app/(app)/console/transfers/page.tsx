@@ -1,3 +1,4 @@
+import { RecordUnreachable } from "@/components/FormSection";
 import { PageHeading } from "@/components/PageHeading";
 import { TransferPanel, type AssetOption, type PersonaOption } from "@/components/TransferPanel";
 import { loadPeople, personaByAddress } from "@/lib/chain";
@@ -43,10 +44,7 @@ export default async function TransfersPage() {
       </PageHeading>
 
       {!state ? (
-        <p className="text-body leading-body text-label">
-          The shared record cannot be reached at the moment. Ask whoever looks
-          after the system, then reload this page.
-        </p>
+        <RecordUnreachable />
       ) : (
         <TransferPanel personas={personaOptions} assets={assetOptions} />
       )}

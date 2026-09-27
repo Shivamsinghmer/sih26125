@@ -5,7 +5,9 @@ import { useActionState, useState } from "react";
 import { IDLE, MAX_PHOTO_BYTES } from "@/lib/action-types";
 import { addPersonAction } from "@/lib/actions";
 import { ActionResultCard } from "./ActionResultCard";
-import { Field, PillButton, Select } from "./ui";
+import { Button } from "@/components/ui/button";
+import { Field, Select } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 const ROLE_OPTIONS = [
   { value: 3, label: "Secret" },
@@ -51,38 +53,46 @@ export function AddPersonPanel() {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="max-w-[70ch] text-body leading-body text-label">
-        Their name, job title and photo are kept in the staff records here. What
-        goes onto the shared record is only an ID &mdash; nothing that names
-        them &mdash; which is what lets their details be deleted later if they
-        ask. The photo is used for printing their ID card; the gate does not
-        look it up.
-      </p>
-
-      <form action={formAction} className="flex flex-wrap items-end gap-4">
-        <Field label="Photo">
-          <div className="flex items-center gap-3">
+      <form action={formAction} className="grid gap-x-4 gap-y-5 rounded-3xl bg-mist-gray p-5 sm:grid-cols-2 md:p-6">
+        <Field label="Photo" className="sm:col-span-2">
+          <div className="flex items-center gap-4 rounded-2xl border border-dashed border-black/15 bg-paper-white p-3">
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={preview}
                 alt=""
-                className="h-14 w-14 rounded-xl object-cover"
-                style={{ boxShadow: "var(--shadow-subtle)" }}
+                className="size-16 rounded-xl object-cover ring-1 ring-black/5"
               />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-mist-gray text-caption text-subtle">
-                none
+              <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-mist-gray text-label">
+                <svg
+                  aria-hidden
+                  viewBox="0 0 24 24"
+                  className="size-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="9" r="3.5" />
+                  <path d="M5.5 19.5c1-3.2 3.6-5 6.5-5s5.5 1.8 6.5 5" />
+                </svg>
               </div>
             )}
-            <input
-              type="file"
-              name="photo"
-              accept="image/*"
-              onChange={onPhotoChange}
-              aria-describedby={photoError ? "photo-error" : undefined}
-              className="text-caption leading-caption text-label file:mr-3 file:rounded-full file:border-0 file:bg-ink-black file:px-4 file:py-2 file:text-[13px] file:text-paper-white"
-            />
+            <div className="min-w-0">
+              <input
+                type="file"
+                name="photo"
+                accept="image/*"
+                onChange={onPhotoChange}
+                aria-describedby={photoError ? "photo-error" : "photo-hint"}
+                className="max-w-full text-caption leading-caption text-label file:mr-3 file:h-9 file:cursor-pointer file:rounded-full file:border file:border-ink-black file:bg-transparent file:px-4 file:text-[14px] file:text-ink-black hover:file:bg-mist-gray"
+              />
+              <p id="photo-hint" className="mt-1.5 text-[13px] leading-snug text-label">
+                For the printed ID card only. Under 2MB.
+              </p>
+            </div>
           </div>
           {photoError ? (
             <p
@@ -96,21 +106,11 @@ export function AddPersonPanel() {
         </Field>
 
         <Field label="Name">
-          <input
-            name="name"
-            required
-            minLength={2}
-            placeholder="A. Krishnan"
-            className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
-          />
+          <Input name="name" required minLength={2} placeholder="A. Krishnan" />
         </Field>
 
         <Field label="Job title">
-          <input
-            name="title"
-            placeholder="Engineer, Radar Systems"
-            className="rounded-2xl border border-mist-gray bg-paper-white px-4 py-3 text-body"
-          />
+          <Input name="title" placeholder="Engineer, Radar Systems" />
         </Field>
 
         <Field label="Starting clearance">
@@ -131,9 +131,11 @@ export function AddPersonPanel() {
           </Select>
         </Field>
 
-        <PillButton type="submit" disabled={pending}>
-          {pending ? "Adding…" : "Add person"}
-        </PillButton>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-black/[0.06] pt-5 sm:col-span-2">
+          <Button type="submit" disabled={pending}>
+            {pending ? "Adding…" : "Add person"}
+          </Button>
+        </div>
       </form>
 
       <ActionResultCard result={result} />

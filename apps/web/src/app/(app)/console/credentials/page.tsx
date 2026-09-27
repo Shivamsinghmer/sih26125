@@ -1,4 +1,5 @@
 import { CredentialsPanel } from "@/components/CredentialsPanel";
+import { RecordUnreachable } from "@/components/FormSection";
 import { PageHeading } from "@/components/PageHeading";
 import { loadConsoleState } from "@/lib/state";
 import type { PersonaOption } from "@/components/TransferPanel";
@@ -24,10 +25,7 @@ export default async function CredentialsPage() {
       </PageHeading>
 
       {!state ? (
-        <p className="text-body leading-body text-label">
-          The shared record cannot be reached at the moment. Ask whoever looks
-          after the system, then reload this page.
-        </p>
+        <RecordUnreachable />
       ) : (
         <CredentialsPanel personas={personaOptions} />
       )}

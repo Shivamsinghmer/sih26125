@@ -1,4 +1,5 @@
 import { AddPersonPanel } from "@/components/AddPersonPanel";
+import { FormSection, RecordUnreachable } from "@/components/FormSection";
 import { PageHeading } from "@/components/PageHeading";
 import { PeopleGrid } from "@/components/PeopleGrid";
 import { SeedButton } from "@/components/SeedButton";
@@ -18,32 +19,34 @@ export default async function PeoplePage() {
       </PageHeading>
 
       {!state ? (
-        <p className="text-body leading-body text-label">
-          The shared record cannot be reached at the moment. Ask whoever looks
-          after the system, then reload this page.
-        </p>
+        <RecordUnreachable />
       ) : (
         <>
           <PeopleGrid personas={state.personas} />
 
-          <section className="mt-14 border-t border-mist-gray pt-10">
-            <h2 id="onboard" className="scroll-mt-6 text-subheading leading-subheading">Add someone</h2>
-            <div className="mt-5">
-              <AddPersonPanel />
-            </div>
-          </section>
+          <FormSection
+            id="onboard"
+            title="Add someone"
+            description={
+              <>
+                Their name, job title and photo are kept in the staff records
+                here. What goes onto the shared record is only an ID &mdash;
+                nothing that names them &mdash; which is what lets their details
+                be deleted later if they ask. The photo is used for printing
+                their ID card; the gate does not look it up.
+              </>
+            }
+          >
+            <AddPersonPanel />
+          </FormSection>
 
-          <section className="mt-14 border-t border-mist-gray pt-10">
-            <h2 id="reset" className="scroll-mt-6 text-subheading leading-subheading">Load the example data</h2>
-            <p className="mt-1 max-w-[70ch] text-caption leading-caption text-label">
-              Adds four example people, gives them their clearances and puts one
-              piece of equipment on the system. Useful for a demonstration or for
-              finding your way around. Safe to press more than once.
-            </p>
-            <div className="mt-5">
-              <SeedButton />
-            </div>
-          </section>
+          <FormSection
+            id="reset"
+            title="Load the example data"
+            description="Adds four example people, gives them their clearances and puts one piece of equipment on the system. Useful for a demonstration or for finding your way around. Safe to press more than once."
+          >
+            <SeedButton />
+          </FormSection>
         </>
       )}
     </>
